@@ -1,6 +1,6 @@
 use sdl2::rect::Point;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Settings {
     pub width: i32,
     pub height: i32,
@@ -8,6 +8,9 @@ pub struct Settings {
     pub gap: i32,
     pub safety_distance: f64,
     pub offset_road: i32,
+
+    pub vertical_key_points: Vec<i32>,
+    pub horizontal_key_points: Vec<i32>,
 
     pub horizontal_road_1: i32,
     pub vertical_road_1: i32,
@@ -34,12 +37,27 @@ pub struct Settings {
 }
 
 impl Settings {
+    
     pub fn new(width: i32, height: i32, vehicle: i32, gap: i32, safety_distance: f64) -> Settings {
         let half_width = width / 2;
         let half_height = height / 2;
         let vehicle_width = 2 * vehicle;
         let offset_road = gap + vehicle_width;
         let offset_road_s = gap + vehicle;
+
+        let get_map_key_points = |dim: i32, half_dim: i32| -> Vec<i32> {
+            return vec!(
+                0, 
+                half_dim - 3 * offset_road,
+                half_dim - 2 * offset_road,
+                half_dim - offset_road,
+                half_dim,
+                half_dim + offset_road,
+                half_dim + 2 * offset_road,
+                half_dim + 3 * offset_road,
+                dim
+            );
+        };
 
         Self {
             width,
@@ -48,6 +66,9 @@ impl Settings {
             gap,
             safety_distance,
             offset_road,
+
+            vertical_key_points: get_map_key_points(width, half_width),
+            horizontal_key_points: get_map_key_points(height, half_height),
 
             horizontal_road_1: half_height - offset_road,
             vertical_road_1: half_width - offset_road,
@@ -74,3 +95,5 @@ impl Settings {
         }
     }
 }
+
+
