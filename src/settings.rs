@@ -12,11 +12,6 @@ pub struct Settings {
     pub vertical_key_points: Vec<i32>,
     pub horizontal_key_points: Vec<i32>,
 
-    pub horizontal_road_1: i32,
-    pub vertical_road_1: i32,
-    pub horizontal_road_2: i32,
-    pub vertical_road_2: i32,
-
     pub appearance_vehicle_up: Point,
     pub appearance_vehicle_down: Point,
     pub appearance_vehicle_left: Point,
@@ -47,22 +42,22 @@ impl Settings {
 
         let get_map_key_points = |dim: i32, half_dim: i32| -> Vec<i32> {
             return vec!(
-                0, 
-                half_dim - 3 * offset_road - offset_road / 2, //
+                -offset_road_s, 
+                half_dim - 3 * offset_road - offset_road / 2 - offset_road_s/2, //
                 half_dim - 3 * offset_road,
-                half_dim - 2 * offset_road - offset_road / 2, //
+                half_dim - 2 * offset_road - offset_road / 2 - offset_road_s/2, //
                 half_dim - 2 * offset_road,
-                half_dim - offset_road - offset_road / 2, //
+                half_dim - offset_road - offset_road / 2 - offset_road_s/2, //
                 half_dim - offset_road,
-                half_dim - offset_road / 2, //
+                half_dim - offset_road / 2 - offset_road_s/2, //
                 half_dim,
-                half_dim + offset_road / 2, //
+                half_dim + offset_road / 2 - offset_road_s/2, //
                 half_dim + offset_road,
-                half_dim + offset_road + offset_road / 2, //
+                half_dim + offset_road + offset_road / 2 - offset_road_s/2, //
                 half_dim + 2 * offset_road,
-                half_dim + 2 * offset_road + offset_road / 2, //
+                half_dim + 2 * offset_road + offset_road / 2 - offset_road_s/2, //
                 half_dim + 3 * offset_road,
-                half_dim + 3 * offset_road + offset_road / 2, //
+                half_dim + 3 * offset_road + offset_road / 2 - offset_road_s/2, //
                 dim
             );
         };
@@ -77,11 +72,6 @@ impl Settings {
 
             vertical_key_points: get_map_key_points(width, half_width),
             horizontal_key_points: get_map_key_points(height, half_height),
-
-            horizontal_road_1: half_height - offset_road,
-            vertical_road_1: half_width - offset_road,
-            horizontal_road_2: half_height + offset_road,
-            vertical_road_2: half_width + offset_road,
 
             appearance_vehicle_up: Point::new(half_width + (offset_road_s / 2), height),
             appearance_vehicle_down:Point::new(half_width - 3 * offset_road_s / 2, -vehicle), 

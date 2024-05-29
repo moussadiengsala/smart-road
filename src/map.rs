@@ -173,10 +173,10 @@ fn draw_dashed_line(
 fn draw_arrow(canvas: &mut Canvas<Window>, end: Point, direction: &str, size: f32) {
     // Calculate the start point based on the direction and size
     let (start, end) = match direction {
-        "right" => (Point::new(end.x - size as i32, end.y), Point::new(end.x + size as i32, end.y)),
-        "left" => (Point::new(end.x + size as i32, end.y), Point::new(end.x - size as i32, end.y)),
-        "up" => (Point::new(end.x, end.y + size as i32), Point::new(end.x, end.y - size as i32)),
-        "down" => (Point::new(end.x, end.y - size as i32), Point::new(end.x, end.y + size as i32)),
+        "right" => (Point::new(end.x, end.y + size as i32), Point::new(end.x + 2*size as i32, end.y + size as i32)),
+        "left" => (Point::new(end.x + 2 * size as i32, end.y + size as i32), Point::new(end.x, end.y + size as i32)),
+        "up" => (Point::new(end.x + size as i32, end.y + 2 * size as i32), Point::new(end.x + size as i32, end.y)),
+        "down" => (Point::new(end.x + size as i32, end.y), Point::new(end.x + size as i32, end.y + 2*size as i32)),
         _ => (end, end), // Default to the end point if direction is invalid
     };
 

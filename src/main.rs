@@ -27,13 +27,12 @@ pub fn main() {
 
 
     // canvas.clear();
-
-    // let mut lanes = vec![
-    //     Lane::new(Cross::First, settings.clone()),
-    //     Lane::new(Cross::Second, settings.clone()),
-    //     Lane::new(Cross::Third, settings.clone()),
-    //     Lane::new(Cross::Fourth, settings.clone()),
-    // ];
+    let mut lanes = vec![
+        Lane::new(Cross::First, settings.clone()),
+        Lane::new(Cross::Second, settings.clone()),
+        Lane::new(Cross::Third, settings.clone()),
+        Lane::new(Cross::Fourth, settings.clone()),
+    ];
     
     canvas.present();
     let mut event_pump = sdl_context.event_pump().unwrap();
@@ -50,7 +49,7 @@ pub fn main() {
                     ..
                 } => break 'running,
                 _ => {
-                    // handle_keyboard_event(&event, &mut lanes, settings.clone());
+                    handle_keyboard_event(&event, &mut lanes, settings.clone());
                 }
             }
         }
@@ -64,11 +63,9 @@ pub fn main() {
         // map
         draw_map(&mut canvas, settings.clone());
 
-        // for lane in &mut lanes {
-        //     lane.update(&mut canvas);
-        // };
-
-        // update_traffic_lights(&mut lanes);
+        for lane in &mut lanes {
+            lane.update(&mut canvas);
+        };
 
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
