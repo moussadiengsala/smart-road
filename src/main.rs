@@ -20,14 +20,12 @@ pub fn main() {
 
     
     // Load an image as a texture
-    let texture_creator = canvas.texture_creator();
-    let texture = texture_creator
-        .load_texture("./unnamed.png")
-        .unwrap();
+    // let texture_creator = canvas.texture_creator();
+    // let texture = texture_creator
+    //     .load_texture("./unnamed.png")
+    //     .unwrap();
 
-    
 
-    // canvas.set_draw_color(Color::RGB(0, 255, 255));
     // canvas.clear();
 
     // let mut lanes = vec![
@@ -42,7 +40,7 @@ pub fn main() {
     let mut i = 0;
     'running: loop {
         i = (i + 1) % 255;
-        // canvas.set_draw_color(Color::RGB(55, 64, 5));
+        canvas.set_draw_color(Color::RGB(55, 64, 5));
         canvas.clear();
         for event in event_pump.poll_iter() {
             match event {
@@ -59,7 +57,10 @@ pub fn main() {
 
         canvas.clear();
         // The rest of the game loop goes here...
-        canvas.copy(&texture, None, None).unwrap();
+
+        // load the image
+        // canvas.copy(&texture, None, None).unwrap();
+
         // map
         draw_map(&mut canvas, settings.clone());
 

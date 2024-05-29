@@ -48,13 +48,21 @@ impl Settings {
         let get_map_key_points = |dim: i32, half_dim: i32| -> Vec<i32> {
             return vec!(
                 0, 
+                half_dim - 3 * offset_road - offset_road / 2, //
                 half_dim - 3 * offset_road,
+                half_dim - 2 * offset_road - offset_road / 2, //
                 half_dim - 2 * offset_road,
+                half_dim - offset_road - offset_road / 2, //
                 half_dim - offset_road,
+                half_dim - offset_road / 2, //
                 half_dim,
+                half_dim + offset_road / 2, //
                 half_dim + offset_road,
+                half_dim + offset_road + offset_road / 2, //
                 half_dim + 2 * offset_road,
+                half_dim + 2 * offset_road + offset_road / 2, //
                 half_dim + 3 * offset_road,
+                half_dim + 3 * offset_road + offset_road / 2, //
                 dim
             );
         };
