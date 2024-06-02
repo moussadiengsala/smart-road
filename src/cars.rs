@@ -15,63 +15,62 @@ pub struct Vehicle {
     pub position: Point,
     pub route: Direction,
     pub itineraire: Itineraire,
-    pub direction: i32,
+    pub direction: f32,
     pub velocity: f32,
     pub is_changed_direction: bool,
     pub is_stopped: bool,
     pub stage: Stage,
+    pub velosity_type: Vec<f32>,
 
     pub distance_traveled: f64,
     pub time: f64,
+
+    accumulated_x: f32,
+    accumulated_y: f32,
 
     settings: Rc<Settings>,
 }
 
 impl Vehicle {
     pub fn new(route: Direction, itineraire: Itineraire, settings: Rc<Settings>) -> Self {
+        let velosity_type = vec![0.5, 1.0, 2.0, 3.0];
         let mut rng = rand::thread_rng();
-        // 
+        
         Self {
             position: Point::new(0, 0),
             route,
             itineraire,
             direction: match route {
-                Direction::Up | Direction::Left => -1,
-                Direction::Down | Direction::None | Direction::Right => 1,
+                Direction::Up | Direction::Left => -1.0,
+                Direction::Down | Direction::None | Direction::Right => 1.0,
             },
-            velocity: match rng.gen_range(1, 4) {
-                1 => 0.5,
-                2 => 2.0,
-                _ => 3.0
-            },
+            velocity: velosity_type[rng.gen_range(0,4)],
+            velosity_type,
             is_changed_direction: false,
             is_stopped: false,
             distance_traveled: 0.0,
             stage: Stage::Waiting,
             time: 0.0,
             settings,
+            accumulated_x: 0.0,
+            accumulated_y: 0.0,
         }
     }
 
     pub fn set_vilosity(&mut self, vehicle_type: Vilosity) {
-        match vehicle_type {
-            Vilosity::Slow => self.velocity = 0.5,
-            Vilosity::Medium => self.velocity = 2.0,
-            Vilosity::Fast => self.velocity = 3.0,
+        let i = match vehicle_type {
+            Vilosity::Reduce => 0,
+            Vilosity::Slow => 1,
+            Vilosity::Medium => 2,
+            Vilosity::Fast => 3,
+            
         };
-       
-        // println!("-- vilosity {} --- route {:?} itini {:?}", self.velocity, self.route, self.itineraire);
+        self.velocity = self.velosity_type[i];
     }
 
     pub fn adjust_velocity(&mut self, vehicles: &Vehicle) {
-        if self.distance(vehicles) < self.settings.safety_distance + 10.0 && self.velocity > 1 {
-            self.velocity -= 1;
-        }
-
-        if self.distance(vehicles) < self.settings.safety_distance + 10.0
-            && (vehicles.velocity == 2 || vehicles.velocity == 3)
-            && self.velocity < 3
-        {
+        // if you are at safty distance behind a vehicle you shoud have his velocity.
+        if self.distance(vehicles) < self.settings.safety_distance + 10.0 {
             self.velocity = vehicles.velocity;
         }
     }
@@ -252,10 +251,21 @@ impl Vehicle {
         if !self.is_changed_direction {
             match self.route {
                 Direction::Up | Direction::Down => {
-                    self.position.y += self.direction * self.velocity
+                    self.accumulated_y += self.direction * self.velocity;
+                    println!("9999999999999999999 {}", self.accumulated_y);
+                    if self.accumulated_y.abs() >= 1.0 {
+                        let integer_part = self.accumulated_y.trunc() as i32;
+                        self.position.y += integer_part;
+                        self.accumulated_y -= integer_part as f32;
+                    }
                 }
                 Direction::Left | Direction::None | Direction::Right => {
-                    self.position.x += self.direction * self.velocity
+                    self.accumulated_x += self.direction * self.velocity;
+                    if self.accumulated_x.abs() >= 1.0 {
+                        let integer_part = self.accumulated_x.trunc() as i32;
+                        self.position.x += integer_part;
+                        self.accumulated_x -= integer_part as f32;
+                    }
                 }
             };
         } else {
@@ -266,7 +276,12 @@ impl Vehicle {
                     } else {
                         -self.direction
                     };
-                    self.position.x += d * self.velocity;
+                    self.accumulated_x += d * self.velocity;
+                    if self.accumulated_x.abs() >= 1.0 {
+                        let integer_part = self.accumulated_x.trunc() as i32;
+                        self.position.x += integer_part;
+                        self.accumulated_x -= integer_part as f32;
+                    }
                 }
                 Direction::Left | Direction::None | Direction::Right => {
                     let d = if self.itineraire == Itineraire::Right {
@@ -274,7 +289,12 @@ impl Vehicle {
                     } else {
                         -self.direction
                     };
-                    self.position.y += d * self.velocity;
+                    self.accumulated_y += d * self.velocity;
+                    if self.accumulated_y.abs() >= 1.0 {
+                        let integer_part = self.accumulated_y.trunc() as i32;
+                        self.position.y += integer_part;
+                        self.accumulated_y -= integer_part as f32;
+                    }
                 }
             };
         };
@@ -297,10 +317,9 @@ impl Vehicle {
         self.distance_traveled += distance;
 
         // Calculate time increment based on distance and velocity
-        if self.velocity != 0 {
-            let time_increment = distance / self.velocity as f64;
-            self.time += time_increment;
-        }
+        let time_increment = distance / self.velocity as f64;
+        self.time += time_increment;
+        
 
         match self.route {
             Direction::Up => {

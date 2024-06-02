@@ -38,7 +38,7 @@ impl Settings {
 
         let get_map_key_points = |dim: i32, half_dim: i32| -> Vec<i32> {
             return vec![
-                -offset_road_s,
+                -0,
                 half_dim - 3 * offset_road - offset_road / 2 - offset_road_s / 2, //
                 half_dim - 3 * offset_road,
                 half_dim - 2 * offset_road - offset_road / 2 - offset_road_s / 2, //
@@ -115,67 +115,96 @@ impl Settings {
     }
 }
 
-pub(crate) const BLOCKS: &[&[(Cross, Itineraire)]] = &[
-    &[
-        (Cross::First, Itineraire::Straight),
-        (Cross::First, Itineraire::Left),
-        (Cross::Fourth, Itineraire::Left),
-        (Cross::Third, Itineraire::Straight),
-        (Cross::Third, Itineraire::Left),
-        (Cross::Second, Itineraire::Left),
-    ],
-    &[
-        (Cross::First, Itineraire::Straight),
-        (Cross::Fourth, Itineraire::Straight),
-        (Cross::Fourth, Itineraire::Left),
-        (Cross::Third, Itineraire::Left),
-        (Cross::Second, Itineraire::Straight),
-    ],
-    &[
-        (Cross::First, Itineraire::Left),
-        (Cross::Fourth, Itineraire::Straight),
-        (Cross::Fourth, Itineraire::Left),
-        (Cross::Third, Itineraire::Left),
-        (Cross::Second, Itineraire::Straight),
-        (Cross::Second, Itineraire::Left),
-    ],
-    &[
-        (Cross::First, Itineraire::Left),
-        (Cross::First, Itineraire::Straight),
-        (Cross::Fourth, Itineraire::Straight),
-        (Cross::Third, Itineraire::Left),
-        (Cross::Second, Itineraire::Straight),
-    ],
-    &[
-        (Cross::First, Itineraire::Left),
-        (Cross::First, Itineraire::Straight),
-        (Cross::Fourth, Itineraire::Left),
-        (Cross::Third, Itineraire::Left),
-        (Cross::Second, Itineraire::Straight),
-        (Cross::Second, Itineraire::Left),
-    ],
-    &[
-        (Cross::First, Itineraire::Left),
-        (Cross::Fourth, Itineraire::Straight),
-        (Cross::Third, Itineraire::Straight),
-        (Cross::Third, Itineraire::Left),
-        (Cross::Second, Itineraire::Straight),
-    ],
-    &[
-        (Cross::First, Itineraire::Left),
-        (Cross::Fourth, Itineraire::Straight),
-        (Cross::Fourth, Itineraire::Left),
-        (Cross::Third, Itineraire::Left),
-        (Cross::Third, Itineraire::Straight),
-        (Cross::Second, Itineraire::Left),
-    ],
-    &[
-        (Cross::First, Itineraire::Straight),
-        (Cross::Fourth, Itineraire::Left),
-        (Cross::Third, Itineraire::Straight),
-        (Cross::Second, Itineraire::Straight),
-        (Cross::Second, Itineraire::Left),
-    ],
+pub struct BLOCK<'a> {
+    pub lane: (Cross, Itineraire),
+    pub intersections: &'a [(Cross, Itineraire)],
+}
+
+pub(crate) const BLOCKS: &[&BLOCK] = &[
+    &BLOCK{
+        lane: (Cross::Second, Itineraire::Left),
+        intersections: &[
+                (Cross::First, Itineraire::Straight),
+                (Cross::First, Itineraire::Left),
+                (Cross::Fourth, Itineraire::Left),
+                (Cross::Third, Itineraire::Straight),
+                (Cross::Third, Itineraire::Left),
+                (Cross::Second, Itineraire::Left)
+            ],
+    },
+    &BLOCK{
+        lane: (Cross::Second, Itineraire::Straight),
+        intersections: &[
+            (Cross::First, Itineraire::Straight),
+            (Cross::Fourth, Itineraire::Straight),
+            (Cross::Fourth, Itineraire::Left),
+            (Cross::Third, Itineraire::Left),
+            (Cross::Second, Itineraire::Straight)
+        ],
+    },
+    &BLOCK{
+        lane: (Cross::Third, Itineraire::Left),
+        intersections: &[
+            (Cross::First, Itineraire::Left),
+            (Cross::Fourth, Itineraire::Straight),
+            (Cross::Fourth, Itineraire::Left),
+            (Cross::Second, Itineraire::Straight),
+            (Cross::Second, Itineraire::Left),
+            (Cross::Third, Itineraire::Left)
+        ],
+    },
+    &BLOCK{
+        lane: (Cross::Third, Itineraire::Straight),
+        intersections: &[
+            (Cross::First, Itineraire::Left),
+            (Cross::First, Itineraire::Straight),
+            (Cross::Fourth, Itineraire::Straight),
+            (Cross::Second, Itineraire::Straight),
+            (Cross::Third, Itineraire::Straight)
+        ],
+    },
+    &BLOCK{
+        lane: (Cross::Fourth, Itineraire::Left),
+        intersections: &[
+            (Cross::First, Itineraire::Left),
+            (Cross::First, Itineraire::Straight),
+            (Cross::Third, Itineraire::Left),
+            (Cross::Second, Itineraire::Straight),
+            (Cross::Second, Itineraire::Left),
+            (Cross::Fourth, Itineraire::Left)
+        ],
+    },
+    &BLOCK{
+        lane: (Cross::Fourth, Itineraire::Straight),
+        intersections: &[
+            (Cross::First, Itineraire::Left),
+            (Cross::Third, Itineraire::Straight),
+            (Cross::Third, Itineraire::Left),
+            (Cross::Second, Itineraire::Straight),
+            (Cross::Fourth, Itineraire::Straight)
+        ],
+    },
+    &BLOCK{
+        lane: (Cross::First, Itineraire::Left),
+        intersections: &[
+            (Cross::Fourth, Itineraire::Straight),
+            (Cross::Fourth, Itineraire::Left),
+            (Cross::Third, Itineraire::Left),
+            (Cross::Third, Itineraire::Straight),
+            (Cross::Second, Itineraire::Left),
+            (Cross::First, Itineraire::Left)
+        ],
+    },
+    &BLOCK{
+        lane: (Cross::First, Itineraire::Straight),
+        intersections: &[
+            (Cross::Fourth, Itineraire::Left),
+            (Cross::Third, Itineraire::Straight),
+            (Cross::Second, Itineraire::Straight),
+            (Cross::Second, Itineraire::Left),
+            (Cross::First, Itineraire::Straight)
+        ],
+    },
 ];
 
 /*

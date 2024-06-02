@@ -43,9 +43,9 @@ impl Route {
         if self.vehicles.is_empty() {
             self.stage = Stage::Waiting;
             self.waiting_since = None;
+            return;
         }
-        println!("------------------------- {:?} {:?}", self.cross, self.itineraire);
-
+        // println!("------------------------- {:?} {:?}", self.cross, self.itineraire);
         
         let mut vehicle_in_intersection = self
             .vehicles
@@ -54,7 +54,7 @@ impl Route {
             .collect::<Vec<&mut Vehicle>>();
 
         for v in vehicle_in_intersection.iter_mut() {
-            if v.velocity != 3 {
+            if v.velocity != 3.0 {
                 v.set_vilosity(Vilosity::Fast);
             }
         }

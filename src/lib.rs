@@ -41,6 +41,7 @@ pub enum Itineraire {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Vilosity {
+    Reduce,
     Slow,
     Medium,
     Fast,
@@ -81,29 +82,29 @@ pub fn handle_keyboard_event(event: &Event, lanes: &mut Vec<Lane>, settings: Rc<
     };
 
     if route != Direction::None {
-        let mut rng = rand::thread_rng();
-        if route == Direction::Down {
-            match rng.gen_range(1, 3) {
-                1 => lane.routes.iter_mut().nth(1).unwrap().add_vehicle(route),
-                _ => lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route),
-            }
-        } else if route == Direction::Right {
-            lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route)
-        } else if route == Direction::Left {
-            match rng.gen_range(1, 3) {
-                1 => lane.routes.iter_mut().nth(1).unwrap().add_vehicle(route),
-                _ => lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route),
-            }
-        } else if route == Direction::Up {
-            lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route)
-        }
-
         // let mut rng = rand::thread_rng();
-        // match rng.gen_range(0, 3) {
-        //     0 => lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route),
-        //     1 => lane.routes.iter_mut().nth(1).unwrap().add_vehicle(route),
-        //     _ => lane.routes.iter_mut().nth(2).unwrap().add_vehicle(route),
+        // if route == Direction::Down {
+        //     match rng.gen_range(1, 3) {
+        //         1 => lane.routes.iter_mut().nth(1).unwrap().add_vehicle(route),
+        //         _ => lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route),
+        //     }
+        // } else if route == Direction::Right {
+        //     lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route)
+        // } else if route == Direction::Left {
+        //     match rng.gen_range(1, 3) {
+        //         1 => lane.routes.iter_mut().nth(1).unwrap().add_vehicle(route),
+        //         _ => lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route),
+        //     }
+        // } else if route == Direction::Up {
+        //     lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route)
         // }
+
+        let mut rng = rand::thread_rng();
+        match rng.gen_range(0, 3) {
+            0 => lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route),
+            1 => lane.routes.iter_mut().nth(1).unwrap().add_vehicle(route),
+            _ => lane.routes.iter_mut().nth(2).unwrap().add_vehicle(route),
+        }
     }
 }
 
@@ -114,11 +115,11 @@ fn extract_routes_mut(lanes: &mut Vec<Lane>) -> Vec<&mut Route> {
         .collect()
 }
 
-fn chunk_routes<'a>(routes: Vec<&'a mut Route>, block: usize) -> Vec<&'a mut Route> {
+fn chunk_routes<'a>(routes: Vec<&'a mut Route>, block: &[(Cross, Itineraire)]) -> Vec<&'a mut Route> {
     let mut chunks = Vec::new();
 
     for route in routes {
-        for block_def in BLOCKS[block].iter() {
+        for block_def in block.iter() {
             if block_def == &(route.cross, route.itineraire) {
                 chunks.push(&mut *route);
                 break;
@@ -129,38 +130,47 @@ fn chunk_routes<'a>(routes: Vec<&'a mut Route>, block: usize) -> Vec<&'a mut Rou
     chunks
 }
 
-pub fn get_blocks(lanes: &mut Vec<Lane>) {
-    // for block in 0..BLOCKS.len() {
+pub fn smart_intersection(lanes: &mut Vec<Lane>) {
+    for i in 0..BLOCKS.len() {
+        let block = BLOCKS[i];
         let routes: Vec<&mut Route> = extract_routes_mut(lanes);
-        let mut routes_chunk = Rc::new(RefCell::new(chunk_routes(routes, 0)));
+        let routes_chunk = Rc::new(RefCell::new(chunk_routes(routes, block.intersections)));
 
+        // there is nothing to do if any of the intersection road has a vehicle.
         if routes_chunk.borrow().iter().all(|r| r.vehicles.len() == 0) {
-            return;
+            continue;
         }
 
         if routes_chunk
+        .borrow()
+        .iter()
+        .any(|r| r.stage == Stage::Crossing && (r.cross, r.itineraire) != block.lane) {
+            continue;
+        }
+
+        if !routes_chunk
             .borrow()
             .iter()
-            .any(|r| r.stage == Stage::Crossing) {
-                // println!("-------------------a routes is in Crossing mode----------------");
+            .filter(|r| r.stage == Stage::Crossing && (r.cross, r.itineraire) == block.lane).collect::<Vec<&&mut Route>>().is_empty() {
+
             // the new vehicle that appears in the other road should be slow down
             for route in routes_chunk.borrow_mut().iter_mut() {
                 if route.stage != Stage::Crossing  {
-                    route.adjust_velocity_vehicle_in_route(Vilosity::Slow);
+                    route.adjust_velocity_vehicle_in_route(Vilosity::Reduce);
                 }
             }
-            return;
+            continue;
         }
 
         for route in routes_chunk.borrow_mut().iter_mut() {
-            let mut vehicle_in_intersection = route
+            let vehicle_in_intersection = route
                 .vehicles
                 .iter()
                 .filter(|v| v.stage == Stage::Crossing)
                 .collect::<Vec<&Vehicle>>();
-            if !vehicle_in_intersection.is_empty() && route.stage != Stage::Crossing {
+            if !vehicle_in_intersection.is_empty() && route.stage != Stage::Crossing && (route.cross, route.itineraire) == block.lane {
                 route.stage = Stage::Crossing;
-                return;
+                continue;
             }
         }
 
@@ -171,7 +181,7 @@ pub fn get_blocks(lanes: &mut Vec<Lane>) {
         //     .flat_map(|r| r.vehicles.iter().filter(|v| v.stage == Stage::Waiting))
         //     .collect();
         // // if waiting_vehicles.clone().len() < 2 {
-        // //     return;
+        // //     continue;
         // // }
 
         let min_distance_route_cross_itineraire = {
@@ -181,16 +191,26 @@ pub fn get_blocks(lanes: &mut Vec<Lane>) {
                 .unwrap();
             (min_distance_route.cross, min_distance_route.itineraire)
         };
+
+        if min_distance_route_cross_itineraire != block.lane {
+            for route in routes_chunk.borrow_mut().iter_mut() {
+                if (route.cross, route.itineraire) == block.lane {
+                    route.adjust_velocity_vehicle_in_route(Vilosity::Reduce);
+                    route.stage = Stage::Waiting;
+                }
+            }
+            continue;
+        }
         
         for route in routes_chunk.borrow_mut().iter_mut() {
             if (route.cross, route.itineraire) == min_distance_route_cross_itineraire {
                 route.adjust_velocity_vehicle_in_route(Vilosity::Fast);
                 route.stage = Stage::Crossing;
             } else {
-                route.adjust_velocity_vehicle_in_route(Vilosity::Slow);
+                route.adjust_velocity_vehicle_in_route(Vilosity::Reduce);
             }
         }
-    // }
+    }
 }
 
 //     // for route in routes_chunk.iter_mut() {
