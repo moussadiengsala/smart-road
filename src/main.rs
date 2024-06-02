@@ -1,4 +1,6 @@
 
+use std::cell::RefCell;
+
 use sdl2::image::{self, InitFlag, LoadTexture};
 use smart_road::*;
 
@@ -18,21 +20,12 @@ pub fn main() {
     
     let mut canvas = window.into_canvas().build().unwrap();
 
-    
-    // Load an image as a texture
-    // let texture_creator = canvas.texture_creator();
-    // let texture = texture_creator
-    //     .load_texture("./unnamed.png")
-    //     .unwrap();
-
-
-    // canvas.clear();
-    let mut lanes = vec![
+    let lanes: Rc<RefCell<Vec<Lane>>> = Rc::new(RefCell::new(vec![
         Lane::new(Cross::First, settings.clone()),
         Lane::new(Cross::Second, settings.clone()),
         Lane::new(Cross::Third, settings.clone()),
         Lane::new(Cross::Fourth, settings.clone()),
-    ];
+    ]));
     
     canvas.present();
     let mut event_pump = sdl_context.event_pump().unwrap();
@@ -49,23 +42,24 @@ pub fn main() {
                     ..
                 } => break 'running,
                 _ => {
-                    handle_keyboard_event(&event, &mut lanes, settings.clone());
+                    handle_keyboard_event(&event,&mut lanes.borrow_mut(), settings.clone());
                 }
             }
         }
 
         canvas.clear();
-        // The rest of the game loop goes here...
-
-        // load the image
-        // canvas.copy(&texture, None, None).unwrap();
 
         // map
         draw_map(&mut canvas, settings.clone());
 
-        for lane in &mut lanes {
-            lane.update(&mut canvas);
-        };
+        {
+            let mut lanes_borrowed = lanes.borrow_mut();
+            for lane in lanes_borrowed.iter_mut() {
+                lane.update(&mut canvas);
+            }
+        }
+
+        get_blocks(&mut lanes.borrow_mut());
 
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));

@@ -1,5 +1,7 @@
 use sdl2::rect::Point;
 
+use crate::{Cross, Itineraire};
+
 #[derive(Debug, Clone)]
 pub struct Settings {
     pub width: i32,
@@ -11,11 +13,6 @@ pub struct Settings {
 
     pub vertical_key_points: Vec<i32>,
     pub horizontal_key_points: Vec<i32>,
-
-    pub appearance_vehicle_up: Point,
-    pub appearance_vehicle_down: Point,
-    pub appearance_vehicle_left: Point,
-    pub appearance_vehicle_right: Point,
 
     pub change_direction_1: Point,
     pub change_direction_2: Point,
@@ -32,7 +29,6 @@ pub struct Settings {
 }
 
 impl Settings {
-    
     pub fn new(width: i32, height: i32, vehicle: i32, gap: i32, safety_distance: f64) -> Settings {
         let half_width = width / 2;
         let half_height = height / 2;
@@ -41,25 +37,25 @@ impl Settings {
         let offset_road_s = gap + vehicle;
 
         let get_map_key_points = |dim: i32, half_dim: i32| -> Vec<i32> {
-            return vec!(
-                -offset_road_s, 
-                half_dim - 3 * offset_road - offset_road / 2 - offset_road_s/2, //
+            return vec![
+                -offset_road_s,
+                half_dim - 3 * offset_road - offset_road / 2 - offset_road_s / 2, //
                 half_dim - 3 * offset_road,
-                half_dim - 2 * offset_road - offset_road / 2 - offset_road_s/2, //
+                half_dim - 2 * offset_road - offset_road / 2 - offset_road_s / 2, //
                 half_dim - 2 * offset_road,
-                half_dim - offset_road - offset_road / 2 - offset_road_s/2, //
+                half_dim - offset_road - offset_road / 2 - offset_road_s / 2, //
                 half_dim - offset_road,
-                half_dim - offset_road / 2 - offset_road_s/2, //
+                half_dim - offset_road / 2 - offset_road_s / 2, //
                 half_dim,
-                half_dim + offset_road / 2 - offset_road_s/2, //
+                half_dim + offset_road / 2 - offset_road_s / 2, //
                 half_dim + offset_road,
-                half_dim + offset_road + offset_road / 2 - offset_road_s/2, //
+                half_dim + offset_road + offset_road / 2 - offset_road_s / 2, //
                 half_dim + 2 * offset_road,
-                half_dim + 2 * offset_road + offset_road / 2 - offset_road_s/2, //
+                half_dim + 2 * offset_road + offset_road / 2 - offset_road_s / 2, //
                 half_dim + 3 * offset_road,
-                half_dim + 3 * offset_road + offset_road / 2 - offset_road_s/2, //
-                dim
-            );
+                half_dim + 3 * offset_road + offset_road / 2 - offset_road_s / 2, //
+                dim,
+            ];
         };
 
         Self {
@@ -73,25 +69,187 @@ impl Settings {
             vertical_key_points: get_map_key_points(width, half_width),
             horizontal_key_points: get_map_key_points(height, half_height),
 
-            appearance_vehicle_up: Point::new(half_width + (offset_road_s / 2), height),
-            appearance_vehicle_down:Point::new(half_width - 3 * offset_road_s / 2, -vehicle), 
-            appearance_vehicle_left:Point::new(width,  half_height - 3* offset_road_s / 2),
-            appearance_vehicle_right: Point::new(-vehicle, half_height + offset_road_s / 2),
+            change_direction_1: Point::new(
+                half_width - 3 * offset_road_s / 2,
+                half_height - 3 * offset_road_s / 2,
+            ),
+            change_direction_2: Point::new(
+                half_width + (offset_road_s / 2),
+                half_height + offset_road_s / 2,
+            ),
 
-            change_direction_1:Point::new(half_width - 3 * offset_road_s / 2, half_height - 3* offset_road_s / 2),
-            change_direction_2:Point::new(half_width + (offset_road_s / 2), half_height + offset_road_s / 2),
+            stop_point_first: Point::new(
+                half_width - 3 * offset_road_s / 2,
+                half_height - offset_road - vehicle,
+            ),
+            stop_point_second: Point::new(
+                half_width - offset_road - vehicle,
+                half_height + offset_road_s / 2,
+            ),
+            stop_point_third: Point::new(
+                half_width + offset_road,
+                half_height - 3 * offset_road_s / 2,
+            ),
+            stop_point_fourth: Point::new(
+                half_width + (offset_road_s / 2),
+                half_height + offset_road,
+            ),
 
-            stop_point_first: Point::new(half_width - 3 * offset_road_s / 2, half_height - offset_road - vehicle),
-            stop_point_second: Point::new(half_width - offset_road - vehicle, half_height + offset_road_s / 2),
-            stop_point_third: Point::new(half_width + offset_road, half_height - 3* offset_road_s / 2),
-            stop_point_fourth: Point::new(half_width + (offset_road_s / 2), half_height + offset_road),
-
-            dis_vehicle_first: Point::new(half_width + (offset_road_s / 2), half_height - offset_road - vehicle),
-            dis_vehicle_second:Point::new(half_width - offset_road - vehicle, half_height - 3* offset_road_s / 2), 
-            dis_vehicle_third:Point::new(half_width + offset_road,  half_height + offset_road_s / 2),
-            dis_vehicle_fourth: Point::new(half_width - 3 * offset_road_s / 2, half_height + offset_road),
+            dis_vehicle_first: Point::new(
+                half_width + (offset_road_s / 2),
+                half_height - offset_road - vehicle,
+            ),
+            dis_vehicle_second: Point::new(
+                half_width - offset_road - vehicle,
+                half_height - 3 * offset_road_s / 2,
+            ),
+            dis_vehicle_third: Point::new(
+                half_width + offset_road,
+                half_height + offset_road_s / 2,
+            ),
+            dis_vehicle_fourth: Point::new(
+                half_width - 3 * offset_road_s / 2,
+                half_height + offset_road,
+            ),
         }
     }
 }
 
+pub(crate) const BLOCKS: &[&[(Cross, Itineraire)]] = &[
+    &[
+        (Cross::First, Itineraire::Straight),
+        (Cross::First, Itineraire::Left),
+        (Cross::Fourth, Itineraire::Left),
+        (Cross::Third, Itineraire::Straight),
+        (Cross::Third, Itineraire::Left),
+        (Cross::Second, Itineraire::Left),
+    ],
+    &[
+        (Cross::First, Itineraire::Straight),
+        (Cross::Fourth, Itineraire::Straight),
+        (Cross::Fourth, Itineraire::Left),
+        (Cross::Third, Itineraire::Left),
+        (Cross::Second, Itineraire::Straight),
+    ],
+    &[
+        (Cross::First, Itineraire::Left),
+        (Cross::Fourth, Itineraire::Straight),
+        (Cross::Fourth, Itineraire::Left),
+        (Cross::Third, Itineraire::Left),
+        (Cross::Second, Itineraire::Straight),
+        (Cross::Second, Itineraire::Left),
+    ],
+    &[
+        (Cross::First, Itineraire::Left),
+        (Cross::First, Itineraire::Straight),
+        (Cross::Fourth, Itineraire::Straight),
+        (Cross::Third, Itineraire::Left),
+        (Cross::Second, Itineraire::Straight),
+    ],
+    &[
+        (Cross::First, Itineraire::Left),
+        (Cross::First, Itineraire::Straight),
+        (Cross::Fourth, Itineraire::Left),
+        (Cross::Third, Itineraire::Left),
+        (Cross::Second, Itineraire::Straight),
+        (Cross::Second, Itineraire::Left),
+    ],
+    &[
+        (Cross::First, Itineraire::Left),
+        (Cross::Fourth, Itineraire::Straight),
+        (Cross::Third, Itineraire::Straight),
+        (Cross::Third, Itineraire::Left),
+        (Cross::Second, Itineraire::Straight),
+    ],
+    &[
+        (Cross::First, Itineraire::Left),
+        (Cross::Fourth, Itineraire::Straight),
+        (Cross::Fourth, Itineraire::Left),
+        (Cross::Third, Itineraire::Left),
+        (Cross::Third, Itineraire::Straight),
+        (Cross::Second, Itineraire::Left),
+    ],
+    &[
+        (Cross::First, Itineraire::Straight),
+        (Cross::Fourth, Itineraire::Left),
+        (Cross::Third, Itineraire::Straight),
+        (Cross::Second, Itineraire::Straight),
+        (Cross::Second, Itineraire::Left),
+    ],
+];
 
+/*
+    // block 1
+
+    North - Straight
+    North - Left
+    South - Left
+    East(left) - Straight
+    East(left) - Left
+    West(right) - Left
+
+    // block 2
+
+    North - Straight
+    South - Straight
+    South - Left
+    East(left) - Left
+    West(right) - Straight
+----------------------------------------------------------------
+
+    // block 3
+
+    North - Left
+    South - Straight
+    South - Left
+    East - Left
+    West(right) - Straight
+    West(right) - Left
+
+    // block 4
+
+    North - Straight
+    North - Left
+    South - Straight
+    East - Straight
+    West(right) - Left
+---------------------------------------------------------------
+
+    // block 5
+
+    North - Straight
+    North - Left
+    South - Left
+    East(left) - Left
+    West(right) - Straight
+    West(right) - Left
+
+    // block 6
+
+    North - Left
+    South - Straight
+    East(left) - Straight
+    East(left) - Left
+    West(right) - Straight
+
+--------------------------------------------------------------------
+
+    // block 7
+
+    North - Left
+    South - Straight
+    South - Left
+    East(left) - Straight
+    East(left) - Left
+    West(right) - Left
+
+    // block 8
+
+    North - Straight
+    South - Left
+    East(left) - Straight
+    West(right) - Straight
+    West(right) - Left
+
+
+*/

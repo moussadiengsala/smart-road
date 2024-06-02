@@ -8,29 +8,71 @@ use sdl2::{
     video::Window,
 };
 
-use crate::{Direction, Itineraire, Settings};
+use crate::{lane::Stage, Direction, Itineraire, Settings, Vilosity};
 
 #[derive(Debug, Clone)]
 pub struct Vehicle {
     pub position: Point,
     pub route: Direction,
     pub itineraire: Itineraire,
-    pub velocity: i32,
+    pub direction: i32,
+    pub velocity: f32,
     pub is_changed_direction: bool,
     pub is_stopped: bool,
+    pub stage: Stage,
+
+    pub distance_traveled: f64,
+    pub time: f64,
+
     settings: Rc<Settings>,
 }
 
 impl Vehicle {
     pub fn new(route: Direction, itineraire: Itineraire, settings: Rc<Settings>) -> Self {
+        let mut rng = rand::thread_rng();
+        // 
         Self {
             position: Point::new(0, 0),
             route,
             itineraire,
-            velocity: 1,
+            direction: match route {
+                Direction::Up | Direction::Left => -1,
+                Direction::Down | Direction::None | Direction::Right => 1,
+            },
+            velocity: match rng.gen_range(1, 4) {
+                1 => 0.5,
+                2 => 2.0,
+                _ => 3.0
+            },
             is_changed_direction: false,
             is_stopped: false,
+            distance_traveled: 0.0,
+            stage: Stage::Waiting,
+            time: 0.0,
             settings,
+        }
+    }
+
+    pub fn set_vilosity(&mut self, vehicle_type: Vilosity) {
+        match vehicle_type {
+            Vilosity::Slow => self.velocity = 0.5,
+            Vilosity::Medium => self.velocity = 2.0,
+            Vilosity::Fast => self.velocity = 3.0,
+        };
+       
+        // println!("-- vilosity {} --- route {:?} itini {:?}", self.velocity, self.route, self.itineraire);
+    }
+
+    pub fn adjust_velocity(&mut self, vehicles: &Vehicle) {
+        if self.distance(vehicles) < self.settings.safety_distance + 10.0 && self.velocity > 1 {
+            self.velocity -= 1;
+        }
+
+        if self.distance(vehicles) < self.settings.safety_distance + 10.0
+            && (vehicles.velocity == 2 || vehicles.velocity == 3)
+            && self.velocity < 3
+        {
+            self.velocity = vehicles.velocity;
         }
     }
 
@@ -78,30 +120,121 @@ impl Vehicle {
         canvas.fill_rect(rect).unwrap();
     }
 
+    fn set_stage(&mut self) {
+        let len = self.settings.horizontal_key_points.len();
+        let y = &self.settings.horizontal_key_points;
+        let x = &self.settings.vertical_key_points;
+
+        match self.route {
+            Direction::Up => {
+                match self.itineraire {
+                    Itineraire::Left => {
+                        if self.position.y < y[len - 2] && self.position.x > x[2] {
+                            self.stage = Stage::Crossing;
+                        } else if self.position.x < x[2]  {
+                            self.stage = Stage::Crossed;
+                        }
+                    },
+                    Itineraire::Straight => {
+                        if self.position.y < y[len - 2] && self.position.y > y[2] {
+                            self.stage = Stage::Crossing;
+                        } else if self.position.y < y[2] {
+                            self.stage = Stage::Crossed;
+                        }
+                    },
+                    _ => (),
+                }
+            },
+            Direction::Down => {
+                match self.itineraire {
+                    Itineraire::Left => {
+                        if self.position.y > y[2] && self.position.x < x[len - 2] {
+                            self.stage = Stage::Crossing;
+                        } else if self.position.x > x[len - 2]{
+                            self.stage = Stage::Crossed;
+                        }
+                    },
+                    Itineraire::Straight => {
+                        if self.position.y > y[2] && self.position.y < y[len - 2] {
+                            self.stage = Stage::Crossing;
+                        } else if self.position.y > y[len - 2] {
+                            self.stage = Stage::Crossed;
+                        }
+                    },
+                    _ => (),
+                }
+            },
+            Direction::Left => {
+                match self.itineraire {
+                    Itineraire::Left => {
+                        if self.position.x < x[len - 2] && self.position.y < y[len - 2] {
+                            self.stage = Stage::Crossing;
+                        } else if  self.position.y > y[len - 2] {
+                            self.stage = Stage::Crossed;
+                        }
+                    },
+                    Itineraire::Straight => {
+                        if self.position.x < x[len - 2] && self.position.x > x[2] {
+                            self.stage = Stage::Crossing;
+                        } else if self.position.x < x[2] {
+                            self.stage = Stage::Crossed;
+                        }
+                    },
+                    _ => (),
+                }
+            },
+            Direction::Right => {
+                match self.itineraire {
+                    Itineraire::Left => {
+                        if self.position.x > x[2] && self.position.y > y[2] {
+                            self.stage = Stage::Crossing;
+                        } else if self.position.y < y[2] {
+                            self.stage = Stage::Crossed;
+                        }
+                    },
+                    Itineraire::Straight => {
+                        if self.position.x > x[2] && self.position.x < x[len - 2] {
+                            self.stage = Stage::Crossing;
+                        } else if self.position.x > x[len - 2] {
+                            self.stage = Stage::Crossed;
+                        }
+                    },
+                    _ => (),
+                }
+            },
+            _ => (),
+        }
+    }
+
     pub fn spawn(&mut self, direction: Direction) {
         let len = self.settings.vertical_key_points.len();
-        let get_position = |vp_idx, hp_idx| Point::new(self.settings.vertical_key_points[vp_idx], self.settings.horizontal_key_points[hp_idx]);
-    
+        let get_position = |vp_idx, hp_idx| {
+            Point::new(
+                self.settings.vertical_key_points[vp_idx],
+                self.settings.horizontal_key_points[hp_idx],
+            )
+        };
+
         match direction {
             Direction::Up => {
                 self.position = match self.itineraire {
-                    Itineraire::Right => get_position(9, len - 1),
+                    Itineraire::Left => get_position(9, len - 1),
                     Itineraire::Straight => get_position(11, len - 1),
-                    Itineraire::Left => get_position(13, len - 1),
+                    Itineraire::Right => get_position(13, len - 1),
                 };
             }
             Direction::Down => {
                 self.position = match self.itineraire {
-                    Itineraire::Left => get_position(3, 0),
+                    Itineraire::Right => get_position(3, 0),
                     Itineraire::Straight => get_position(5, 0),
-                    Itineraire::Right => get_position(7, 0),
+                    Itineraire::Left => get_position(7, 0),
                 };
             }
             Direction::Left => {
                 self.position = match self.itineraire {
-                    Itineraire::Left => get_position(len - 1, 3),
+                    Itineraire::Right => get_position(len - 1, 3),
                     Itineraire::Straight => get_position(len - 1, 5),
-                    Itineraire::Right => get_position(len - 1, 7),
+                    Itineraire::Left => get_position(len - 1, 7),
                 };
             }
             Direction::Right => {
@@ -114,32 +247,104 @@ impl Vehicle {
             _ => (),
         }
     }
-    
+
+    fn move_in_direction(&mut self) {
+        if !self.is_changed_direction {
+            match self.route {
+                Direction::Up | Direction::Down => {
+                    self.position.y += self.direction * self.velocity
+                }
+                Direction::Left | Direction::None | Direction::Right => {
+                    self.position.x += self.direction * self.velocity
+                }
+            };
+        } else {
+            match self.route {
+                Direction::Up | Direction::Down => {
+                    let d = if self.itineraire == Itineraire::Left {
+                        self.direction
+                    } else {
+                        -self.direction
+                    };
+                    self.position.x += d * self.velocity;
+                }
+                Direction::Left | Direction::None | Direction::Right => {
+                    let d = if self.itineraire == Itineraire::Right {
+                        self.direction
+                    } else {
+                        -self.direction
+                    };
+                    self.position.y += d * self.velocity;
+                }
+            };
+        };
+    }
 
     pub fn move_forward(&mut self) {
         if self.is_stopped {
             return;
-        };
+        }
+        self.set_stage();
+
+        // Previous position before moving
+        let prev_position = self.position;
+
+        // Move in the current direction
+        self.move_in_direction();
+
+        // Calculate distance traveled
+        let distance = self.distance_to(prev_position);
+        self.distance_traveled += distance;
+
+        // Calculate time increment based on distance and velocity
+        if self.velocity != 0 {
+            let time_increment = distance / self.velocity as f64;
+            self.time += time_increment;
+        }
 
         match self.route {
             Direction::Up => {
-                if !self.is_changed_direction {
-                    self.position.y -= self.velocity
+                if (prev_position.y > self.settings.horizontal_key_points[13]
+                    && self.position.y <= self.settings.horizontal_key_points[13]
+                    && self.itineraire == Itineraire::Right)
+                    || (prev_position.y > self.settings.horizontal_key_points[7]
+                        && self.position.y <= self.settings.horizontal_key_points[7]
+                        && self.itineraire == Itineraire::Left)
+                {
+                    self.is_changed_direction = true;
                 }
             }
             Direction::Down => {
-                if !self.is_changed_direction {
-                    self.position.y += self.velocity
+                if (prev_position.y < self.settings.horizontal_key_points[3]
+                    && self.position.y >= self.settings.horizontal_key_points[3]
+                    && self.itineraire == Itineraire::Right)
+                    || (prev_position.y < self.settings.horizontal_key_points[9]
+                        && self.position.y >= self.settings.horizontal_key_points[9]
+                        && self.itineraire == Itineraire::Left)
+                {
+                    self.is_changed_direction = true;
                 }
             }
             Direction::Left => {
-                if !self.is_changed_direction {
-                    self.position.x -= self.velocity
+                if (prev_position.x > self.settings.vertical_key_points[13]
+                    && self.position.x <= self.settings.vertical_key_points[13]
+                    && self.itineraire == Itineraire::Right)
+                    || (prev_position.x > self.settings.vertical_key_points[7]
+                        && self.position.x <= self.settings.vertical_key_points[7]
+                        && self.itineraire == Itineraire::Left)
+                {
+                    self.is_changed_direction = true;
                 }
             }
             Direction::Right => {
-                if !self.is_changed_direction {
-                    self.position.x += self.velocity
+                if (prev_position.x < self.settings.vertical_key_points[9]
+                    && self.position.x >= self.settings.vertical_key_points[9]
+                    && self.itineraire == Itineraire::Left)
+                    || (prev_position.x < self.settings.vertical_key_points[3]
+                        && self.position.x >= self.settings.vertical_key_points[3]
+                        && self.itineraire == Itineraire::Right)
+                {
+                    self.is_changed_direction = true;
                 }
             }
             _ => (),
@@ -256,87 +461,4 @@ impl Vehicle {
         }
     }
 
-    pub fn move_forward(&mut self) {
-        if self.is_stopped {
-            return;
-        };
-
-        match self.route {
-            Direction::Up => {
-                if !self.is_changed_direction {
-                    self.position.y -= self.velocity
-                }
-                else {
-                    let d = if self.destination == Direction::Left {
-                        -1
-                    } else {
-                        1
-                    };
-                    self.position.x += d * self.velocity;
-                };
-
-                if (self.position.y == self.settings.change_direction_1.y)
-                    && (self.destination == Direction::Left)
-                    || self.destination == Direction::Right
-                        && (self.position.y == self.settings.change_direction_2.y)
-                {
-                    self.is_changed_direction = true;
-                };
-            }
-            Direction::Down => {
-                if !self.is_changed_direction {
-                    self.position.y += self.velocity
-                } else {
-                    let d = if self.destination == Direction::Left {
-                        -1
-                    } else {
-                        1
-                    };
-                    self.position.x += d * self.velocity;
-                };
-
-                if (self.position.y == self.settings.change_direction_2.y)
-                    && (self.destination == Direction::Right)
-                    || (self.position.y == self.settings.change_direction_1.y)
-                        && self.destination == Direction::Left
-                {
-                    self.is_changed_direction = true;
-                };
-            }
-            Direction::Left => {
-                if !self.is_changed_direction {
-                    self.position.x -= self.velocity
-                } else {
-                    let d = if self.destination == Direction::Down {
-                        1
-                    } else {
-                        -1
-                    };
-                    self.position.y += d * self.velocity;
-                };
-
-                if self.destination == Direction::Down
-                    && self.position.x == self.settings.change_direction_1.x
-                    || self.destination == Direction::Up
-                        && self.position.x == self.settings.change_direction_2.x
-                {
-                    self.is_changed_direction = true;
-                };
-            }
-            Direction::Right => {
-                if !self.is_changed_direction {
-                    self.position.x += self.velocity
-                } else {
-                    self.position.y -= self.velocity;
-                };
-
-                if self.destination == Direction::Up
-                    && self.position.x == self.settings.change_direction_2.x
-                {
-                    self.is_changed_direction = true;
-                };
-            }
-            _ => (),
-        }
-    }
 */
