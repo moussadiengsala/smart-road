@@ -33,7 +33,7 @@ pub struct Vehicle {
 
 impl Vehicle {
     pub fn new(route: Direction, itineraire: Itineraire, settings: Rc<Settings>) -> Self {
-        let velosity_type = vec![0.5, 1.0, 2.0, 3.0];
+        let velosity_type = vec![0.1, 0.5, 2.0, 3.0];
         let mut rng = rand::thread_rng();
         
         Self {
@@ -44,7 +44,7 @@ impl Vehicle {
                 Direction::Up | Direction::Left => -1.0,
                 Direction::Down | Direction::None | Direction::Right => 1.0,
             },
-            velocity: velosity_type[rng.gen_range(0,4)],
+            velocity: velosity_type[rng.gen_range(2,4)],
             velosity_type,
             is_changed_direction: false,
             is_stopped: false,
@@ -105,6 +105,9 @@ impl Vehicle {
     }
 
     pub fn update(&mut self, canvas: &mut Canvas<Window>) {
+        if self.velocity == 0.1 {
+            println!("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj");
+        }
         if !self.is_stopped {
             self.move_forward();
         }
@@ -128,16 +131,16 @@ impl Vehicle {
             Direction::Up => {
                 match self.itineraire {
                     Itineraire::Left => {
-                        if self.position.y < y[len - 2] && self.position.x > x[2] {
+                        if self.position.y < y[len - 2] && self.position.x > x[4] {
                             self.stage = Stage::Crossing;
-                        } else if self.position.x < x[2]  {
+                        } else if self.position.x < x[4]  {
                             self.stage = Stage::Crossed;
                         }
                     },
                     Itineraire::Straight => {
-                        if self.position.y < y[len - 2] && self.position.y > y[2] {
+                        if self.position.y < y[len - 2] && self.position.y > y[4] {
                             self.stage = Stage::Crossing;
-                        } else if self.position.y < y[2] {
+                        } else if self.position.y < y[4] {
                             self.stage = Stage::Crossed;
                         }
                     },
@@ -147,16 +150,16 @@ impl Vehicle {
             Direction::Down => {
                 match self.itineraire {
                     Itineraire::Left => {
-                        if self.position.y > y[2] && self.position.x < x[len - 2] {
+                        if self.position.y > y[2] && self.position.x < x[len - 4] {
                             self.stage = Stage::Crossing;
-                        } else if self.position.x > x[len - 2]{
+                        } else if self.position.x > x[len - 4]{
                             self.stage = Stage::Crossed;
                         }
                     },
                     Itineraire::Straight => {
-                        if self.position.y > y[2] && self.position.y < y[len - 2] {
+                        if self.position.y > y[2] && self.position.y < y[len - 4] {
                             self.stage = Stage::Crossing;
-                        } else if self.position.y > y[len - 2] {
+                        } else if self.position.y > y[len - 4] {
                             self.stage = Stage::Crossed;
                         }
                     },
@@ -166,16 +169,16 @@ impl Vehicle {
             Direction::Left => {
                 match self.itineraire {
                     Itineraire::Left => {
-                        if self.position.x < x[len - 2] && self.position.y < y[len - 2] {
+                        if self.position.x < x[len - 2] && self.position.y < y[len - 4] {
                             self.stage = Stage::Crossing;
-                        } else if  self.position.y > y[len - 2] {
+                        } else if  self.position.y > y[len - 4] {
                             self.stage = Stage::Crossed;
                         }
                     },
                     Itineraire::Straight => {
-                        if self.position.x < x[len - 2] && self.position.x > x[2] {
+                        if self.position.x < x[len - 2] && self.position.x > x[4] {
                             self.stage = Stage::Crossing;
-                        } else if self.position.x < x[2] {
+                        } else if self.position.x < x[4] {
                             self.stage = Stage::Crossed;
                         }
                     },
@@ -185,16 +188,16 @@ impl Vehicle {
             Direction::Right => {
                 match self.itineraire {
                     Itineraire::Left => {
-                        if self.position.x > x[2] && self.position.y > y[2] {
+                        if self.position.x > x[2] && self.position.y > y[4] {
                             self.stage = Stage::Crossing;
-                        } else if self.position.y < y[2] {
+                        } else if self.position.y < y[4] {
                             self.stage = Stage::Crossed;
                         }
                     },
                     Itineraire::Straight => {
-                        if self.position.x > x[2] && self.position.x < x[len - 2] {
+                        if self.position.x > x[2] && self.position.x < x[len - 4] {
                             self.stage = Stage::Crossing;
-                        } else if self.position.x > x[len - 2] {
+                        } else if self.position.x > x[len - 4] {
                             self.stage = Stage::Crossed;
                         }
                     },
@@ -252,7 +255,6 @@ impl Vehicle {
             match self.route {
                 Direction::Up | Direction::Down => {
                     self.accumulated_y += self.direction * self.velocity;
-                    println!("9999999999999999999 {}", self.accumulated_y);
                     if self.accumulated_y.abs() >= 1.0 {
                         let integer_part = self.accumulated_y.trunc() as i32;
                         self.position.y += integer_part;

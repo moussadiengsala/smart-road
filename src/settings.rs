@@ -121,15 +121,16 @@ pub struct BLOCK<'a> {
 }
 
 pub(crate) const BLOCKS: &[&BLOCK] = &[
+    // Right
     &BLOCK{
         lane: (Cross::Second, Itineraire::Left),
         intersections: &[
+                (Cross::Second, Itineraire::Left),
                 (Cross::First, Itineraire::Straight),
                 (Cross::First, Itineraire::Left),
                 (Cross::Fourth, Itineraire::Left),
                 (Cross::Third, Itineraire::Straight),
                 (Cross::Third, Itineraire::Left),
-                (Cross::Second, Itineraire::Left)
             ],
     },
     &BLOCK{
@@ -142,67 +143,73 @@ pub(crate) const BLOCKS: &[&BLOCK] = &[
             (Cross::Second, Itineraire::Straight)
         ],
     },
+
+    // Left
     &BLOCK{
         lane: (Cross::Third, Itineraire::Left),
         intersections: &[
+            (Cross::Third, Itineraire::Left),
             (Cross::First, Itineraire::Left),
             (Cross::Fourth, Itineraire::Straight),
             (Cross::Fourth, Itineraire::Left),
             (Cross::Second, Itineraire::Straight),
             (Cross::Second, Itineraire::Left),
-            (Cross::Third, Itineraire::Left)
         ],
     },
     &BLOCK{
         lane: (Cross::Third, Itineraire::Straight),
         intersections: &[
+            (Cross::Third, Itineraire::Straight),
             (Cross::First, Itineraire::Left),
             (Cross::First, Itineraire::Straight),
             (Cross::Fourth, Itineraire::Straight),
-            (Cross::Second, Itineraire::Straight),
-            (Cross::Third, Itineraire::Straight)
+            (Cross::Second, Itineraire::Left),
         ],
     },
+
+    // South
     &BLOCK{
         lane: (Cross::Fourth, Itineraire::Left),
         intersections: &[
+            (Cross::Fourth, Itineraire::Left),
             (Cross::First, Itineraire::Left),
             (Cross::First, Itineraire::Straight),
             (Cross::Third, Itineraire::Left),
             (Cross::Second, Itineraire::Straight),
             (Cross::Second, Itineraire::Left),
-            (Cross::Fourth, Itineraire::Left)
         ],
     },
     &BLOCK{
         lane: (Cross::Fourth, Itineraire::Straight),
         intersections: &[
+            (Cross::Fourth, Itineraire::Straight),
             (Cross::First, Itineraire::Left),
             (Cross::Third, Itineraire::Straight),
             (Cross::Third, Itineraire::Left),
             (Cross::Second, Itineraire::Straight),
-            (Cross::Fourth, Itineraire::Straight)
         ],
     },
+
+    // North
     &BLOCK{
         lane: (Cross::First, Itineraire::Left),
         intersections: &[
+            (Cross::First, Itineraire::Left),
             (Cross::Fourth, Itineraire::Straight),
             (Cross::Fourth, Itineraire::Left),
             (Cross::Third, Itineraire::Left),
             (Cross::Third, Itineraire::Straight),
             (Cross::Second, Itineraire::Left),
-            (Cross::First, Itineraire::Left)
         ],
     },
     &BLOCK{
         lane: (Cross::First, Itineraire::Straight),
         intersections: &[
+            (Cross::First, Itineraire::Straight),
             (Cross::Fourth, Itineraire::Left),
             (Cross::Third, Itineraire::Straight),
             (Cross::Second, Itineraire::Straight),
             (Cross::Second, Itineraire::Left),
-            (Cross::First, Itineraire::Straight)
         ],
     },
 ];

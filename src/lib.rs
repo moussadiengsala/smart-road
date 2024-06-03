@@ -156,7 +156,7 @@ pub fn smart_intersection(lanes: &mut Vec<Lane>) {
             // the new vehicle that appears in the other road should be slow down
             for route in routes_chunk.borrow_mut().iter_mut() {
                 if route.stage != Stage::Crossing  {
-                    route.adjust_velocity_vehicle_in_route(Vilosity::Reduce);
+                    route.adjust_velocity_vehicle_in_route(Vilosity::Slow);
                 }
             }
             continue;
@@ -168,6 +168,7 @@ pub fn smart_intersection(lanes: &mut Vec<Lane>) {
                 .iter()
                 .filter(|v| v.stage == Stage::Crossing)
                 .collect::<Vec<&Vehicle>>();
+            
             if !vehicle_in_intersection.is_empty() && route.stage != Stage::Crossing && (route.cross, route.itineraire) == block.lane {
                 route.stage = Stage::Crossing;
                 continue;
@@ -195,7 +196,7 @@ pub fn smart_intersection(lanes: &mut Vec<Lane>) {
         if min_distance_route_cross_itineraire != block.lane {
             for route in routes_chunk.borrow_mut().iter_mut() {
                 if (route.cross, route.itineraire) == block.lane {
-                    route.adjust_velocity_vehicle_in_route(Vilosity::Reduce);
+                    route.adjust_velocity_vehicle_in_route(Vilosity::Slow);
                     route.stage = Stage::Waiting;
                 }
             }
@@ -207,60 +208,8 @@ pub fn smart_intersection(lanes: &mut Vec<Lane>) {
                 route.adjust_velocity_vehicle_in_route(Vilosity::Fast);
                 route.stage = Stage::Crossing;
             } else {
-                route.adjust_velocity_vehicle_in_route(Vilosity::Reduce);
+                route.adjust_velocity_vehicle_in_route(Vilosity::Slow);
             }
         }
     }
 }
-
-//     // for route in routes_chunk.iter_mut() {
-//     //     if (route.clone().cross, route.clone().itineraire) == (a(&routes_chunk).cross, a(&routes_chunk).itineraire) {
-//     //         route.adjust_velocity_vehicle_in_route(Vilosity::Fast);
-//     //     } else {
-//     //         route.adjust_velocity_vehicle_in_route(Vilosity::Slow);
-//     //     }
-//     // }
-
-// for b in routes_chunk {
-//     println!("{:?} {:?}", b.cross, b.itineraire);
-// }
-
-// for block in chunk_routes(all_routes_slice, 1).iter() {
-//     // the block that has the min distance returned by the fynction distance_to_stop_point
-//     // should use adjust_velocity_vehicle_in_route with vilosity_type = Vilosity::Fast the other Vilosity::Slow
-
-// }
-// pub fn update_traffic_lights(lanes: &mut [Lane]) {
-//     // Check if any lane is currently in the Crossing stage
-//     if lanes.iter().any(|lane| lane.stage == Stage::Crossing) {
-//         return;
-//     }
-
-//     let mut next_cross_lane = None;
-//     let mut min_distance = f64::MAX;
-//     let mut max_vehicle_count = 0;
-
-//     for lane in lanes.iter_mut() {
-//         let waiting_vehicles: Vec<&Vehicle> = lane
-//             .vehicles
-//             .iter()
-//             .filter(|v| v.stage == Stage::Waiting)
-//             .collect();
-
-//         if !waiting_vehicles.is_empty() {
-//             if let Some(distance) = lane.closest_vehicle_distance() {
-//                 let vehicle_count = waiting_vehicles.len();
-
-//                 if distance < min_distance || (distance == min_distance && vehicle_count > max_vehicle_count) {
-//                     min_distance = distance;
-//                     max_vehicle_count = vehicle_count;
-//                     next_cross_lane = Some(lane);
-//                 }
-//             }
-//         }
-//     }
-
-//     if let Some(lane) = next_cross_lane {
-//         lane.stage = Stage::Crossing;
-//     }
-// }
