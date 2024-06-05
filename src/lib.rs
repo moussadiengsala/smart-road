@@ -9,7 +9,7 @@ use std::{cell::RefCell, slice};
 pub use std::{rc::Rc, time::Duration};
 
 mod settings;
-pub use settings::Settings;
+pub use settings::{Settings, Statistics, cars_texture};
 
 mod map;
 pub use map::draw_map;
@@ -131,85 +131,64 @@ fn chunk_routes<'a>(routes: Vec<&'a mut Route>, block: &[(Cross, Itineraire)]) -
 }
 
 pub fn smart_intersection(lanes: &mut Vec<Lane>) {
-    for i in 0..BLOCKS.len() {
-        let block = BLOCKS[i];
+    for block in BLOCKS.iter() {
         let routes: Vec<&mut Route> = extract_routes_mut(lanes);
         let routes_chunk = Rc::new(RefCell::new(chunk_routes(routes, block.intersections)));
 
         // there is nothing to do if any of the intersection road has a vehicle.
-        if routes_chunk.borrow().iter().all(|r| r.vehicles.len() == 0) {
+        if routes_chunk.borrow().iter().any(|r| r.stage == Stage::Crossing) 
+        || routes_chunk.borrow().iter().any(|route| (route.cross, route.itineraire) == block.lane && route.vehicles.len() == 0) {
             continue;
         }
 
-        if routes_chunk
-        .borrow()
-        .iter()
-        .any(|r| r.stage == Stage::Crossing && (r.cross, r.itineraire) != block.lane) {
-            continue;
-        }
-
-        if !routes_chunk
-            .borrow()
-            .iter()
-            .filter(|r| r.stage == Stage::Crossing && (r.cross, r.itineraire) == block.lane).collect::<Vec<&&mut Route>>().is_empty() {
-
-            // the new vehicle that appears in the other road should be slow down
-            for route in routes_chunk.borrow_mut().iter_mut() {
-                if route.stage != Stage::Crossing  {
-                    route.adjust_velocity_vehicle_in_route(Vilosity::Slow);
-                }
-            }
-            continue;
-        }
-
-        for route in routes_chunk.borrow_mut().iter_mut() {
-            let vehicle_in_intersection = route
-                .vehicles
+        if let Some(c) = routes_chunk.borrow_mut().iter_mut()
+            .max_by_key(|route| route.vehicles
                 .iter()
-                .filter(|v| v.stage == Stage::Crossing)
-                .collect::<Vec<&Vehicle>>();
-            
-            if !vehicle_in_intersection.is_empty() && route.stage != Stage::Crossing && (route.cross, route.itineraire) == block.lane {
-                route.stage = Stage::Crossing;
+                .filter(|v: &&Vehicle| v.stage == Stage::Crossing)
+                .collect::<Vec<&Vehicle>>().len()
+        ) {
+            if (c.cross, c.itineraire) == block.lane {
+                c.stage = Stage::Crossing;
                 continue;
             }
         }
 
-        // if only on routes have vehicle their is no need to accelerate
-        // let binding = routes_chunk.borrow();
-        // let waiting_vehicles: Vec<&Vehicle> = binding
-        //     .iter()
-        //     .flat_map(|r| r.vehicles.iter().filter(|v| v.stage == Stage::Waiting))
-        //     .collect();
-        // // if waiting_vehicles.clone().len() < 2 {
-        // //     continue;
-        // // }
+        // let mut bi = routes_chunk.borrow_mut();
+        // let mut c = bi.iter_mut()
+        // .filter(|r| r.vehicles.len() != 0).collect::<Vec<&mut &mut Route>>();
+        // if c.len() == 1 && (c[0].cross, c[0].itineraire) == block.lane{
+        //     c[0].stage = Stage::Crossing;
+        //     continue;
+        // }
 
-        let min_distance_route_cross_itineraire = {
-            let routes_chunk_borrowed = routes_chunk.borrow();
-            let min_distance_route = routes_chunk_borrowed.iter()
-                .min_by_key(|route| route.distance_to_stop_point())
-                .unwrap();
-            (min_distance_route.cross, min_distance_route.itineraire)
-        };
+        // let mut b = routes_chunk.borrow_mut();
+        // if let Some(c) =  {
+        //         if (c.cross, c.itineraire) == block.lane {
+        //             println!("Cross -----------------------------------");
+        //             c.stage = Stage::Crossing;
+        //             continue;
+        //         }
+        // }
 
-        if min_distance_route_cross_itineraire != block.lane {
-            for route in routes_chunk.borrow_mut().iter_mut() {
-                if (route.cross, route.itineraire) == block.lane {
-                    route.adjust_velocity_vehicle_in_route(Vilosity::Slow);
-                    route.stage = Stage::Waiting;
+        let mut b = routes_chunk.borrow_mut();
+        if let Some(c) = b.iter_mut()
+            .filter(|r| r.vehicles.len() != 0)
+            .min_by_key(|route| {
+                route.distance_to_stop_point()
+            }) {
+                if (c.cross, c.itineraire) == block.lane {
+                    println!("Cross -----------------------------------");
+                    c.stage = Stage::Crossing;
+                    continue;
                 }
-            }
-            continue;
-        }
-        
-        for route in routes_chunk.borrow_mut().iter_mut() {
-            if (route.cross, route.itineraire) == min_distance_route_cross_itineraire {
-                route.adjust_velocity_vehicle_in_route(Vilosity::Fast);
-                route.stage = Stage::Crossing;
-            } else {
-                route.adjust_velocity_vehicle_in_route(Vilosity::Slow);
+        } else if let Some(c) = b.iter_mut()
+            .max_by_key(|r| r.vehicles.len()) {
+            if (c.cross, c.itineraire) == block.lane {
+                println!("Cross -----------------------------------");
+                c.stage = Stage::Crossing;
+                continue;
             }
         }
+    
     }
 }

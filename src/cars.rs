@@ -1,14 +1,11 @@
-use std::rc::Rc;
+use std::{fmt, rc::Rc, time::Instant};
 
 use rand::Rng;
 use sdl2::{
-    pixels::Color,
-    rect::{Point, Rect},
-    render::Canvas,
-    video::Window,
+    image::{self, InitFlag, LoadTexture}, pixels::Color, rect::{Point, Rect}, render::{Canvas, Texture, WindowCanvas}, video::Window
 };
 
-use crate::{lane::Stage, Direction, Itineraire, Settings, Vilosity};
+use crate::{lane::Stage, Direction, Itineraire, Settings, Statistics, Vilosity};
 
 #[derive(Debug, Clone)]
 pub struct Vehicle {
@@ -22,19 +19,35 @@ pub struct Vehicle {
     pub stage: Stage,
     pub velosity_type: Vec<f32>,
 
+    pub min_vilosity: f64,
+    pub max_vilosity: f64,
+    prev_time: Instant,
+
+
     pub distance_traveled: f64,
     pub time: f64,
-
+    sprite: Rect,
+    texture: usize,
     accumulated_x: f32,
     accumulated_y: f32,
-
+    angle_1: f64,
+    angle_2: f64,
     settings: Rc<Settings>,
 }
 
 impl Vehicle {
     pub fn new(route: Direction, itineraire: Itineraire, settings: Rc<Settings>) -> Self {
-        let velosity_type = vec![0.1, 0.5, 2.0, 3.0];
         let mut rng = rand::thread_rng();
+        let velosity_type = vec![0.1, 0.5, 2.0, 3.0];
+
+        let sprite = Rect::new(0, 0, settings.vehicle as u32 , settings.vehicle as u32 );
+
+        let angle_1 = match route {
+            Direction::Up => 90.0,
+            Direction::Down => -90.0,
+            Direction::Left => 360.0,
+            _ => 180.0,
+        };
         
         Self {
             position: Point::new(0, 0),
@@ -51,10 +64,69 @@ impl Vehicle {
             distance_traveled: 0.0,
             stage: Stage::Waiting,
             time: 0.0,
+            angle_1,
+            angle_2: match route {
+                Direction::Up => match itineraire {
+                    Itineraire::Left => 360.0,
+                    Itineraire::Right => 180.0,
+                    Itineraire::Straight => angle_1,
+                },
+                Direction::Down => match itineraire {
+                    Itineraire::Left => 180.0,
+                    Itineraire::Right => 360.0,
+                    Itineraire::Straight => angle_1,
+                },
+                Direction::Left => match itineraire {
+                    Itineraire::Left => -90.0,
+                    Itineraire::Right => 90.0,
+                    Itineraire::Straight => angle_1,
+                },
+                _ => match itineraire {
+                    Itineraire::Left => 90.0,
+                    Itineraire::Right => -90.0,
+                    Itineraire::Straight => angle_1,
+                },
+            },
+
+            min_vilosity: f64::MAX,
+            max_vilosity: f64::MIN,
+            prev_time: Instant::now(),
+
             settings,
+            sprite,
+            texture: rng.gen_range(0,6), 
             accumulated_x: 0.0,
             accumulated_y: 0.0,
         }
+    }
+
+    pub fn render(&self,
+        canvas: &mut WindowCanvas,
+        texture: &Texture,
+    ) -> Result<(), String> {
+        let x: i32 = if self.route == Direction::Down || self.route == Direction::Left {
+            self.position.x
+        } else {
+            self.position.x + self.settings.vehicle
+        };
+
+        let y: i32 = if self.route == Direction::Up || self.route == Direction::Right {
+            self.position.y + self.settings.vehicle
+        } else {
+            self.position.x 
+        };
+   
+        let screen_position = self.position;
+        let screen_rect = Rect::new(x, y, self.sprite.width(), self.sprite.height());
+
+        if !self.is_changed_direction {
+            // canvas.copy(texture, self.sprite, screen_rect)?;
+            canvas.copy_ex(texture, self.sprite, screen_rect, self.angle_1, Point::new(0, 0), true, true)?;
+        } else {
+            canvas.copy_ex(texture, self.sprite, screen_rect, self.angle_2, Point::new(0, 0), true, true)?;
+        }
+    
+        Ok(())  
     }
 
     pub fn set_vilosity(&mut self, vehicle_type: Vilosity) {
@@ -96,21 +168,12 @@ impl Vehicle {
         ((dx * dx) + (dy * dy)).sqrt()
     }
 
-    pub fn stop(&mut self) {
-        self.is_stopped = true;
-    }
-
-    pub fn resume(&mut self) {
-        self.is_stopped = false;
-    }
-
-    pub fn update(&mut self, canvas: &mut Canvas<Window>) {
-        if self.velocity == 0.1 {
-            println!("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj");
-        }
+    pub fn update(&mut self, canvas: &mut Canvas<Window>, texture: &Vec<Texture>) {
         if !self.is_stopped {
             self.move_forward();
         }
+
+        // self.render(canvas, &texture[self.texture]).unwrap();
 
         canvas.set_draw_color(Color::GREEN);
         let rect = Rect::new(
@@ -314,15 +377,22 @@ impl Vehicle {
         // Move in the current direction
         self.move_in_direction();
 
-        // Calculate distance traveled
-        let distance = self.distance_to(prev_position);
-        self.distance_traveled += distance;
+        // Calculate velocity
+        let delta_distance = self.distance_to(prev_position);
+        let delta_time = Instant::now().duration_since(self.prev_time).as_secs_f64();
+        let velocity = delta_distance / delta_time;
+        self.time += delta_time;
 
-        // Calculate time increment based on distance and velocity
-        let time_increment = distance / self.velocity as f64;
-        self.time += time_increment;
+        // Update min and max velocity
+        if velocity < self.min_vilosity {
+            self.min_vilosity = velocity;
+        }
+        if velocity > self.max_vilosity {
+            self.max_vilosity = velocity;
+        }
+
+        self.prev_time = Instant::now();
         
-
         match self.route {
             Direction::Up => {
                 if (prev_position.y > self.settings.horizontal_key_points[13]

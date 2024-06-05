@@ -18,6 +18,8 @@ impl Path {
     }
 }
 
+
+
 pub fn draw_map(canvas: &mut Canvas<Window>, settings: Rc<Settings>) {
     let (routes, xy) = create_roads(&settings);
 

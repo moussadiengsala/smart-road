@@ -9,7 +9,8 @@ edition = "2021"
 # sdl2 = "0.36"
 rand = "0.3.14"
 
+
 [dependencies.sdl2]
 version = "0.36"
 default-features = false
-features = ["image"]
+features = ["image", "ttf"]

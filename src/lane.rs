@@ -1,10 +1,11 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::{Itineraire, Route};
+use crate::{Itineraire, Route, Statistics};
 use crate::{cars::Vehicle, Direction};
 use crate::settings::Settings;
 use rand::Rng;
+use sdl2::render::Texture;
 use sdl2::{rect::Point, render::Canvas, video::Window};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -53,9 +54,9 @@ impl Lane {
         }
     }
 
-    pub fn update(&mut self, canvas: &mut Canvas<Window>) {
+    pub fn update(&mut self, canvas: &mut Canvas<Window>, texture: &Vec<Texture>, statistic: &mut Statistics) {
         for i in (0..self.routes.len()).rev() {
-            self.routes[i].update(canvas);
+            self.routes[i].update(canvas, &texture, statistic);
         }
     }
 }

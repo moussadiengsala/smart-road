@@ -1,8 +1,9 @@
 use std::{rc::Rc, sync::Arc, time::{Duration, Instant}};
 
-use sdl2::{rect::Point, render::Canvas, video::Window};
+use rand::Rng;
+use sdl2::{rect::Point, render::{Canvas, Texture}, video::Window};
 
-use crate::{lane::Stage, settings, Cross, Direction, Itineraire, Settings, Vehicle, Vilosity};
+use crate::{lane::Stage, settings, Cross, Direction, Itineraire, Settings, Statistics, Vehicle, Vilosity};
 
 #[derive(Debug, Clone)]
 pub struct Route {
@@ -45,19 +46,12 @@ impl Route {
             self.waiting_since = None;
             return;
         }
-        // println!("------------------------- {:?} {:?}", self.cross, self.itineraire);
         
-        let mut vehicle_in_intersection = self
+        let vehicle_in_intersection = self
             .vehicles
             .iter_mut()
             .filter(|v| v.stage == Stage::Crossing)
             .collect::<Vec<&mut Vehicle>>();
-
-        for v in vehicle_in_intersection.iter_mut() {
-            if v.velocity != 3.0 {
-                v.set_vilosity(Vilosity::Fast);
-            }
-        }
 
         if vehicle_in_intersection.is_empty() && self.is_vehicle_in_intersection {
             self.stage = Stage::Waiting;
@@ -100,66 +94,66 @@ impl Route {
     }
     
 
-    pub fn adjust_velocity_vehicle_in_route(&mut self, vilosity_type: Vilosity) {
-        it's better to control all velocity here
+    pub fn adjust_velocity_vehicle_in_route(&mut self) {
+        if self.itineraire == Itineraire::Right {
+            return;
+        }
 
-        - filter the vehicle that are already cross and random their vilosity.
-        - if Waiting don't touch their vilosity until:
-            - at 2 * safty_distance this should be Slow. 
-            - at safty_distance this should be Reduce. 
-        - if Crossing accelerate the vehicle that are in 2 * safty_distance and those in the intersection too. 
-
-        with this you only controle when to set Crossing a route. 
-        // println!("------------  ------------------------{:?}", vilosity_type);
-        // for i in 0..self.vehicles.len() {
-        //     match self.cross {
-        //         Cross::First => {
-        //             if self.vehicles[i].position.y < self.stop_point.y {
-        //                 println!("Cross ------ {}", self.vehicles[i].distance_to(self.stop_point) < self.settings.safety_distance);
-        //                 if self.vehicles[i].distance_to(self.stop_point) < self.settings.safety_distance && vilosity_type == Vilosity::Slow {
-        //                     self.vehicles[i].set_vilosity(Vilosity::Reduce);
-        //                 } else {
-        //                     self.vehicles[i].set_vilosity(vilosity_type);
-        //                 }
-        //                 break;
-        //             }
-        //         }
-        //         Cross::Second => {
-        //             if self.vehicles[i].position.x < self.stop_point.x {
-        //                 if self.vehicles[i].distance_to(self.stop_point) < self.settings.safety_distance && vilosity_type == Vilosity::Slow {
-        //                     self.vehicles[i].set_vilosity(Vilosity::Reduce);
-        //                 } else {
-        //                     self.vehicles[i].set_vilosity(vilosity_type);
-        //                 }
-        //                 break;
-        //             }
-        //         }
-        //         Cross::Third => {
-        //             if self.vehicles[i].position.x > self.stop_point.x {
-        //                 if self.vehicles[i].distance_to(self.stop_point) < self.settings.safety_distance && vilosity_type == Vilosity::Slow {
-        //                     self.vehicles[i].set_vilosity(Vilosity::Reduce);
-        //                 } else {
-        //                     self.vehicles[i].set_vilosity(vilosity_type);
-        //                 }
-        //                 break;
-        //             }
-        //         }
-        //         Cross::Fourth => {
-        //             if self.vehicles[i].position.y > self.stop_point.y {
-        //                 if self.vehicles[i].distance_to(self.stop_point) < self.settings.safety_distance && vilosity_type == Vilosity::Slow {
-        //                     self.vehicles[i].set_vilosity(Vilosity::Reduce);
-        //                 } else {
-        //                     self.vehicles[i].set_vilosity(vilosity_type);
-        //                 }
-        //                 break;
-        //             }
-        //         }
-        //     }
+        // test all use case of cmp
+        // check everywhere you use self.stop_point
+        let cmp = |point_1: Point, point_2: Point| -> f64 {
+            if point_1.x == 0 {
+                return (point_1.y - point_2.y).abs().into();
+            } else {
+                return (point_1.x - point_2.x).abs().into();;
+            }
+        };
+        
+        // if self.stage == Stage::Crossing {
+        //     // println!("Crossing {:?} {:?}", self.cross, self.itineraire);
         // }
+        // it's better to control all velocity here
+
+        
+        // - if Waiting don't touch their vilosity until:
+        //     - at 2 * safty_distance this should be Slow. 
+        //     - at safty_distance this should be Reduce. 
+        // - if Crossing accelerate the vehicle that are in 2 * safty_distance and those in the intersection too. 
+
+        // with this you only controle when to set Crossing a route. 
+
+        // - filter the vehicle that are already cross and random their vilosity.
+        let mut rng = rand::thread_rng();
+        for vehicle in self.vehicles.iter_mut().filter(|v| v.stage == Stage::Crossed) {
+            vehicle.velocity = vehicle.velosity_type[rng.gen_range(2,4)]
+        } 
+
+        if self.stage == Stage::Crossing && self.vehicles.len() != 0 {
+            // && cmp(self.stop_point, v.position) < 2.0 * self.settings.safety_distance)
+            for vehicle in self.vehicles.iter_mut()
+                .filter(|v| v.stage == Stage::Crossing || 
+                    (v.stage == Stage::Waiting)) {
+                vehicle.set_vilosity(Vilosity::Fast);
+            }
+        } else if self.stage == Stage::Waiting && self.vehicles.len() != 0 {
+             // Ralentir les véhicules qui sont à moins de 2 * safety_distance mais à plus de safety_distance
+            // for vehicle in self.vehicles.iter_mut()
+            //     .filter(|v| cmp(self.stop_point, v.position) < 2.0 * self.settings.safety_distance && 
+            //                 cmp(self.stop_point, v.position) > self.settings.safety_distance) {
+            //     vehicle.set_vilosity(Vilosity::Slow);
+            // }
+
+            // Réduire la vitesse des véhicules qui sont à moins de safety_distance
+            for vehicle in self.vehicles.iter_mut()
+                .filter(|v| v.stage == Stage::Crossing ||  cmp(self.stop_point, v.position) < self.settings.safety_distance) {
+                vehicle.set_vilosity(Vilosity::Reduce);
+            }
+        }
     }
 
-    pub fn update(&mut self, canvas: &mut Canvas<Window>) {
+    pub fn update(&mut self, canvas: &mut Canvas<Window>, texture: &Vec<Texture>, statistic: &mut Statistics) {
         self.set_stage();
+        self.adjust_velocity_vehicle_in_route();
 
         for i in (0..self.vehicles.len()).rev() {
             if i > 0 {
@@ -167,10 +161,11 @@ impl Route {
                     self.vehicles[i].adjust_velocity(other);
                 }
             }
-            self.vehicles[i].update(canvas);
+            self.vehicles[i].update(canvas, &texture);
 
             // Remove vehicles that have reached the end of the lane
             if self.vehicles[i].has_reached_end() {
+        
                 self.vehicles.remove(i);
             }
         }
