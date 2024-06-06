@@ -53,12 +53,12 @@ pub fn main() {
         settings.width / 2,
         settings.height / 2,
     );
-    let sprite = Rect::new(0, 0, width as u32, height as u32);
-    let positions = vec![
-        Point::new(-half_width + width / 2, -half_height + height / 2),
-        Point::new(half_width - width / 2, -half_height + height / 2),
-        Point::new(-half_width + width / 2, half_height - height / 2),
-        Point::new(half_width - width / 2, half_height - height / 2),
+  
+    let positions_and_sprite = vec![
+        (Point::new(-half_width + width / 2, -half_height + height / 2) , Rect::new(0, height, width as u32, height as u32)),
+        (Point::new(half_width - width / 2, -half_height + height / 2) , Rect::new(100, height - 100, width as u32, height as u32)),
+        (Point::new(-half_width + width / 2, half_height - height / 2) , Rect::new(width, 100, width as u32, height as u32)),
+        (Point::new(half_width - width / 2, half_height - height / 2) , Rect::new(width, height, width as u32, height as u32)),
     ];
 
     let a: Vec<Texture> = cars_texture(&texture_creator);
@@ -85,8 +85,8 @@ pub fn main() {
         }
 
         canvas.clear();
-        for position in positions.iter() {
-            render(&mut canvas, &texture, *position, sprite).unwrap();
+        for (position, sprite) in positions_and_sprite.iter() {
+            render(&mut canvas, &texture, *position, *sprite).unwrap();
         }
 
         // map
