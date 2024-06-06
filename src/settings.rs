@@ -1,6 +1,6 @@
-use std::{fmt, path::Path, time::Instant};
+use std::path::Path;
 
-use sdl2::{event::Event, image::{self, InitFlag, LoadTexture}, keyboard::Keycode, pixels::Color, rect::{self, Point, Rect}, render::{Canvas, Texture, TextureCreator}, video::{Window, WindowContext}};
+use sdl2::{event::Event, image::{self, InitFlag, LoadTexture}, keyboard::Keycode, pixels::Color, rect::Rect, render::{Texture, TextureCreator}, video::WindowContext};
 
 use crate::{Cross, Itineraire, Vehicle};
 use sdl2::render::TextureQuery;
@@ -33,28 +33,35 @@ impl Statistics {
         }
     }
 
-    pub fn retreive(&mut self, vehicle: &Vehicle) {
-        self.max_velocities.push(vehicle.max_vilosity);
-        self.min_velocities.push(vehicle.min_vilosity);
-        self.time_to_pass.push(vehicle.time);
-    }
+    pub fn retrieve(&mut self, vehicle: &Vehicle) {
+        self.max_vehicles_passed += 1;
+        // Update max and min velocities
+        self.max_velocities.push(vehicle.max_vilosity as f64);
+        self.min_velocities.push(vehicle.min_vilosity as f64);
 
-    fn render(&mut self) {
-        
+        // Update max and min times to pass the intersection
+        self.time_to_pass.push(vehicle.time);
+        self.max_time_to_pass = self.time_to_pass.iter().cloned().fold(f64::MIN, f64::max);
+        self.min_time_to_pass = self.time_to_pass.iter().cloned().fold(f64::MAX, f64::min);
+
+        self.min_velocity = self.min_velocities.iter().cloned().fold(f64::MIN, f64::max);
+        self.max_velocity = self.max_velocities.iter().cloned().fold(f64::MAX, f64::min);
     }
 
     pub fn display_statistics_window(&self, event_pump: &mut sdl2::EventPump) {
+        const WIDTH: u32 = 600;
+        const HEIGHT: u32 = 400;
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
     
         let window = video_subsystem
-            .window("Simulation Statistics", 600, 600)
+            .window("Simulation Statistics", WIDTH, HEIGHT)
             .position_centered()
             .build()
             .unwrap();
     
         let mut canvas = window.into_canvas().build().unwrap();
-        canvas.set_draw_color(Color::RGB(255, 255, 255));
+        canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
     
         let ttf_context = sdl2::ttf::init().unwrap();
@@ -62,23 +69,31 @@ impl Statistics {
         font.set_style(sdl2::ttf::FontStyle::BOLD);
     
         let stats_text = vec![
-            format!("Max vehicles: {}",self.max_vehicles_passed),
-            format!("Max velocity: {:.2} m/s", self.max_velocity),
-            format!("Min velocity: {:.2} m/s", self.min_velocity),
-            format!("Max time to pass: {:.2} s",self.max_time_to_pass),
-            format!("Min time to pass: {:.2} s",self.min_time_to_pass),
-            format!("Close calls: {}",self.close_calls)
+            format!("Statistics"),
+            format!("Max vehicles : {}",self.max_vehicles_passed),
+            format!("Max velocity : {:.2} m/s", self.max_velocity),
+            format!("Min velocity : {:.2} m/s", self.min_velocity),
+            format!("Max time to pass : {:.2} s",self.max_time_to_pass),
+            format!("Min time to pass : {:.2} s",self.min_time_to_pass),
+            format!("Close calls : {}",self.close_calls)
         ];
 
         for (i, stat_text) in stats_text.iter().enumerate() {
             let surface = font.render(&stat_text)
-                .blended(Color::RGB(0, 0, 0))
+                .blended(Color::RGB(255, 255, 255))
                 .unwrap();
             let texture_creator = canvas.texture_creator();
             let texture = texture_creator.create_texture_from_surface(&surface).unwrap();
     
             let TextureQuery { width, height, .. } = texture.query();
-            let r = Rect::new(24, 24 + 24 * i as i32, width, height);
+            
+            let (x, y) = if i == 0 {
+                ((WIDTH - width) as i32 / 2, 24 + 30 * i as i32)
+            } else {
+                (30, 24 + 40 * i as i32)
+            };
+
+            let r = Rect::new(x, y, width, height);
     
             canvas.copy(&texture, None, r).unwrap();
         }

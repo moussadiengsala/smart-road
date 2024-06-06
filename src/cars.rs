@@ -1,11 +1,11 @@
-use std::{fmt, rc::Rc, time::Instant};
+use std::{rc::Rc, time::Instant};
 
 use rand::Rng;
 use sdl2::{
-    image::{self, InitFlag, LoadTexture}, pixels::Color, rect::{Point, Rect}, render::{Canvas, Texture, WindowCanvas}, video::Window
+    rect::{Point, Rect}, render::{Canvas, Texture, TextureQuery, WindowCanvas}, video::Window
 };
 
-use crate::{lane::Stage, Direction, Itineraire, Settings, Statistics, Vilosity};
+use crate::{lane::Stage, Direction, Itineraire, Settings, Vilosity};
 
 #[derive(Debug, Clone)]
 pub struct Vehicle {
@@ -26,7 +26,6 @@ pub struct Vehicle {
 
     pub distance_traveled: f64,
     pub time: f64,
-    sprite: Rect,
     texture: usize,
     accumulated_x: f32,
     accumulated_y: f32,
@@ -39,8 +38,6 @@ impl Vehicle {
     pub fn new(route: Direction, itineraire: Itineraire, settings: Rc<Settings>) -> Self {
         let mut rng = rand::thread_rng();
         let velosity_type = vec![0.1, 0.5, 2.0, 3.0];
-
-        let sprite = Rect::new(0, 0, settings.vehicle as u32 , settings.vehicle as u32 );
 
         let angle_1 = match route {
             Direction::Up => 90.0,
@@ -93,7 +90,6 @@ impl Vehicle {
             prev_time: Instant::now(),
 
             settings,
-            sprite,
             texture: rng.gen_range(0,6), 
             accumulated_x: 0.0,
             accumulated_y: 0.0,
@@ -104,26 +100,32 @@ impl Vehicle {
         canvas: &mut WindowCanvas,
         texture: &Texture,
     ) -> Result<(), String> {
-        let x: i32 = if self.route == Direction::Down || self.route == Direction::Left {
-            self.position.x
-        } else {
-            self.position.x + self.settings.vehicle
+        let TextureQuery { width, height, .. } = texture.query();
+        let position = match self.route {
+            Direction::Up => match self.itineraire {
+                Itineraire::Right => self.position + Point::new(width as i32, height as i32),
+                _ => self.position + Point::new(width as i32, 0)
+            },
+            Direction::Down => match self.itineraire {
+                Itineraire::Left => self.position + Point::new(0, height as i32),
+                _ => self.position,
+            },
+            Direction::Left => match self.itineraire {
+                Itineraire::Left => self.position,
+                _ => self.position + Point::new(width as i32, 0)
+            },
+            _ => match self.itineraire {
+                Itineraire::Left => self.position + Point::new(width as i32, height as i32),
+                _ => self.position + Point::new(0 as i32, height as i32)
+            }
         };
 
-        let y: i32 = if self.route == Direction::Up || self.route == Direction::Right {
-            self.position.y + self.settings.vehicle
-        } else {
-            self.position.x 
-        };
-   
-        let screen_position = self.position;
-        let screen_rect = Rect::new(x, y, self.sprite.width(), self.sprite.height());
+        let screen_rect = Rect::new(position.x, position.y, width, height);
 
         if !self.is_changed_direction {
-            // canvas.copy(texture, self.sprite, screen_rect)?;
-            canvas.copy_ex(texture, self.sprite, screen_rect, self.angle_1, Point::new(0, 0), true, true)?;
+            canvas.copy_ex(texture, None, screen_rect, self.angle_1, Point::new(0, 0), true, true)?;
         } else {
-            canvas.copy_ex(texture, self.sprite, screen_rect, self.angle_2, Point::new(0, 0), true, true)?;
+            canvas.copy_ex(texture, None, screen_rect, self.angle_2, Point::new(0, 0), true, true)?;
         }
     
         Ok(())  
@@ -173,16 +175,16 @@ impl Vehicle {
             self.move_forward();
         }
 
-        // self.render(canvas, &texture[self.texture]).unwrap();
+        self.render(canvas, &texture[self.texture]).unwrap();
 
-        canvas.set_draw_color(Color::GREEN);
-        let rect = Rect::new(
-            self.position.x,
-            self.position.y,
-            self.settings.vehicle as u32,
-            self.settings.vehicle as u32,
-        );
-        canvas.fill_rect(rect).unwrap();
+        // canvas.set_draw_color(Color::GREEN);
+        // let rect = Rect::new(
+        //     self.position.x,
+        //     self.position.y,
+        //     self.settings.vehicle as u32,
+        //     self.settings.vehicle as u32,
+        // );
+        // canvas.fill_rect(rect).unwrap();
     }
 
     fn set_stage(&mut self) {

@@ -1,10 +1,8 @@
-use std::cell::RefCell;
+
 use std::rc::Rc;
 
 use crate::{Itineraire, Route, Statistics};
-use crate::{cars::Vehicle, Direction};
 use crate::settings::Settings;
-use rand::Rng;
 use sdl2::render::Texture;
 use sdl2::{rect::Point, render::Canvas, video::Window};
 

@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 
 use sdl2::{
-    image::{self, InitFlag, LoadTexture},
+    image::LoadTexture,
     rect::{Point, Rect},
     render::{Texture, WindowCanvas},
 };
@@ -20,19 +20,15 @@ fn render(
     let screen_rect = Rect::from_center(screen_position, sprite.width(), sprite.height());
     canvas.copy(texture, sprite, screen_rect)?;
 
-    // canvas.present();
-
     Ok(())
 }
 
 pub fn main() {
-    let settings = Rc::new(Settings::new(1000, 1000, 30, 1, 60.0));
+    let settings = Rc::new(Settings::new(1000, 1000, 30, 1, 100.0));
     let mut statistic: Statistics = Statistics::new();
 
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
-    // Initialize SDL2_image
-    let image_context = image::init(InitFlag::PNG | InitFlag::JPG).unwrap();
 
     let window = video_subsystem
         .window("smart road", settings.width as u32, settings.height as u32)
@@ -66,7 +62,6 @@ pub fn main() {
     ];
 
     let a: Vec<Texture> = cars_texture(&texture_creator);
-    let mut display_statistics = false;
     canvas.present();
     let mut event_pump: sdl2::EventPump = sdl_context.event_pump().unwrap();
     let mut i = 0;

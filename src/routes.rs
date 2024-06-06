@@ -1,9 +1,9 @@
-use std::{rc::Rc, sync::Arc, time::{Duration, Instant}};
+use std::{rc::Rc, time::Instant};
 
 use rand::Rng;
 use sdl2::{rect::Point, render::{Canvas, Texture}, video::Window};
 
-use crate::{lane::Stage, settings, Cross, Direction, Itineraire, Settings, Statistics, Vehicle, Vilosity};
+use crate::{lane::Stage, Cross, Direction, Itineraire, Settings, Statistics, Vehicle, Vilosity};
 
 #[derive(Debug, Clone)]
 pub struct Route {
@@ -15,6 +15,7 @@ pub struct Route {
     pub stage: Stage,
     pub waiting_since: Option<Instant>,
     pub is_vehicle_in_intersection: bool,
+    detected_collisons: bool,
 }
 
 impl Route {
@@ -33,6 +34,7 @@ impl Route {
             stop_point,
             is_vehicle_in_intersection: false,
             waiting_since: None,
+            detected_collisons: false
         }
     }
 
@@ -94,7 +96,7 @@ impl Route {
     }
     
 
-    pub fn adjust_velocity_vehicle_in_route(&mut self) {
+    pub fn adjust_velocity_vehicle_in_route(&mut self, statistic: &mut Statistics) {
         if self.itineraire == Itineraire::Right {
             return;
         }
@@ -105,22 +107,9 @@ impl Route {
             if point_1.x == 0 {
                 return (point_1.y - point_2.y).abs().into();
             } else {
-                return (point_1.x - point_2.x).abs().into();;
+                return (point_1.x - point_2.x).abs().into();
             }
         };
-        
-        // if self.stage == Stage::Crossing {
-        //     // println!("Crossing {:?} {:?}", self.cross, self.itineraire);
-        // }
-        // it's better to control all velocity here
-
-        
-        // - if Waiting don't touch their vilosity until:
-        //     - at 2 * safty_distance this should be Slow. 
-        //     - at safty_distance this should be Reduce. 
-        // - if Crossing accelerate the vehicle that are in 2 * safty_distance and those in the intersection too. 
-
-        // with this you only controle when to set Crossing a route. 
 
         // - filter the vehicle that are already cross and random their vilosity.
         let mut rng = rand::thread_rng();
@@ -129,6 +118,7 @@ impl Route {
         } 
 
         if self.stage == Stage::Crossing && self.vehicles.len() != 0 {
+            self.detected_collisons = false;
             // && cmp(self.stop_point, v.position) < 2.0 * self.settings.safety_distance)
             for vehicle in self.vehicles.iter_mut()
                 .filter(|v| v.stage == Stage::Crossing || 
@@ -136,16 +126,14 @@ impl Route {
                 vehicle.set_vilosity(Vilosity::Fast);
             }
         } else if self.stage == Stage::Waiting && self.vehicles.len() != 0 {
-             // Ralentir les véhicules qui sont à moins de 2 * safety_distance mais à plus de safety_distance
-            // for vehicle in self.vehicles.iter_mut()
-            //     .filter(|v| cmp(self.stop_point, v.position) < 2.0 * self.settings.safety_distance && 
-            //                 cmp(self.stop_point, v.position) > self.settings.safety_distance) {
-            //     vehicle.set_vilosity(Vilosity::Slow);
-            // }
-
+            
             // Réduire la vitesse des véhicules qui sont à moins de safety_distance
             for vehicle in self.vehicles.iter_mut()
                 .filter(|v| v.stage == Stage::Crossing ||  cmp(self.stop_point, v.position) < self.settings.safety_distance) {
+                    if !self.detected_collisons {
+                        statistic.close_calls += 1;
+                        self.detected_collisons = true;
+                    }
                 vehicle.set_vilosity(Vilosity::Reduce);
             }
         }
@@ -153,7 +141,7 @@ impl Route {
 
     pub fn update(&mut self, canvas: &mut Canvas<Window>, texture: &Vec<Texture>, statistic: &mut Statistics) {
         self.set_stage();
-        self.adjust_velocity_vehicle_in_route();
+        self.adjust_velocity_vehicle_in_route(statistic);
 
         for i in (0..self.vehicles.len()).rev() {
             if i > 0 {
@@ -165,7 +153,7 @@ impl Route {
 
             // Remove vehicles that have reached the end of the lane
             if self.vehicles[i].has_reached_end() {
-        
+                statistic.retrieve(&self.vehicles[i]);
                 self.vehicles.remove(i);
             }
         }
@@ -182,10 +170,5 @@ impl Route {
         } else {
             self.vehicles.push(vehicle);
         }
-        println!(
-            "--------------* {:?} {}",
-            self.itineraire,
-            self.vehicles.len()
-        );
     }
 }

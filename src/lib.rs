@@ -5,7 +5,7 @@ pub use sdl2::event::Event;
 pub use sdl2::keyboard::Keycode;
 pub use sdl2::pixels::Color;
 use settings::BLOCKS;
-use std::{cell::RefCell, slice};
+use std::cell::RefCell;
 pub use std::{rc::Rc, time::Duration};
 
 mod settings;
@@ -82,23 +82,6 @@ pub fn handle_keyboard_event(event: &Event, lanes: &mut Vec<Lane>, settings: Rc<
     };
 
     if route != Direction::None {
-        // let mut rng = rand::thread_rng();
-        // if route == Direction::Down {
-        //     match rng.gen_range(1, 3) {
-        //         1 => lane.routes.iter_mut().nth(1).unwrap().add_vehicle(route),
-        //         _ => lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route),
-        //     }
-        // } else if route == Direction::Right {
-        //     lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route)
-        // } else if route == Direction::Left {
-        //     match rng.gen_range(1, 3) {
-        //         1 => lane.routes.iter_mut().nth(1).unwrap().add_vehicle(route),
-        //         _ => lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route),
-        //     }
-        // } else if route == Direction::Up {
-        //     lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route)
-        // }
-
         let mut rng = rand::thread_rng();
         match rng.gen_range(0, 3) {
             0 => lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route),
@@ -136,6 +119,53 @@ pub fn smart_intersection(lanes: &mut Vec<Lane>) {
         let routes_chunk = Rc::new(RefCell::new(chunk_routes(routes, block.intersections)));
 
         // there is nothing to do if any of the intersection road has a vehicle.
+        if routes_chunk.borrow().iter().any(|r| r.stage == Stage::Crossing ||
+            (r.cross, r.itineraire) == block.lane && r.vehicles.len() == 0) 
+         {
+            continue;
+        }
+
+        if let Some(c) = routes_chunk.borrow_mut().iter_mut()
+            .max_by_key(|route| route.vehicles
+                .iter()
+                .filter(|v: &&Vehicle| v.stage == Stage::Crossing)
+                .collect::<Vec<&Vehicle>>().len()
+        ) {
+            if (c.cross, c.itineraire) == block.lane {
+                c.stage = Stage::Crossing;
+                continue;
+            }
+        }
+
+        let mut b = routes_chunk.borrow_mut();
+        if let Some(c) = b.iter_mut()
+            .filter(|r| r.vehicles.len() != 0)
+            .min_by_key(|route| {
+                route.distance_to_stop_point()
+            }) {
+                if (c.cross, c.itineraire) == block.lane {
+                    c.stage = Stage::Crossing;
+                    continue;
+                }
+        } else if let Some(c) = b.iter_mut()
+            .max_by_key(|r| r.vehicles.len()) {
+            if (c.cross, c.itineraire) == block.lane {
+                c.stage = Stage::Crossing;
+                continue;
+            }
+        }
+    
+    }
+}
+
+
+/*
+ pub fn smart_intersection(lanes: &mut Vec<Lane>) {
+    for block in BLOCKS.iter() {
+        let routes: Vec<&mut Route> = extract_routes_mut(lanes);
+        let routes_chunk = Rc::new(RefCell::new(chunk_routes(routes, block.intersections)));
+
+        // there is nothing to do if any of the intersection road has a vehicle.
         if routes_chunk.borrow().iter().any(|r| r.stage == Stage::Crossing) 
         || routes_chunk.borrow().iter().any(|route| (route.cross, route.itineraire) == block.lane && route.vehicles.len() == 0) {
             continue;
@@ -153,23 +183,6 @@ pub fn smart_intersection(lanes: &mut Vec<Lane>) {
             }
         }
 
-        // let mut bi = routes_chunk.borrow_mut();
-        // let mut c = bi.iter_mut()
-        // .filter(|r| r.vehicles.len() != 0).collect::<Vec<&mut &mut Route>>();
-        // if c.len() == 1 && (c[0].cross, c[0].itineraire) == block.lane{
-        //     c[0].stage = Stage::Crossing;
-        //     continue;
-        // }
-
-        // let mut b = routes_chunk.borrow_mut();
-        // if let Some(c) =  {
-        //         if (c.cross, c.itineraire) == block.lane {
-        //             println!("Cross -----------------------------------");
-        //             c.stage = Stage::Crossing;
-        //             continue;
-        //         }
-        // }
-
         let mut b = routes_chunk.borrow_mut();
         if let Some(c) = b.iter_mut()
             .filter(|r| r.vehicles.len() != 0)
@@ -177,14 +190,12 @@ pub fn smart_intersection(lanes: &mut Vec<Lane>) {
                 route.distance_to_stop_point()
             }) {
                 if (c.cross, c.itineraire) == block.lane {
-                    println!("Cross -----------------------------------");
                     c.stage = Stage::Crossing;
                     continue;
                 }
         } else if let Some(c) = b.iter_mut()
             .max_by_key(|r| r.vehicles.len()) {
             if (c.cross, c.itineraire) == block.lane {
-                println!("Cross -----------------------------------");
                 c.stage = Stage::Crossing;
                 continue;
             }
@@ -192,3 +203,4 @@ pub fn smart_intersection(lanes: &mut Vec<Lane>) {
     
     }
 }
+ */
