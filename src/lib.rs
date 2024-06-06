@@ -119,9 +119,17 @@ pub fn smart_intersection(lanes: &mut Vec<Lane>) {
         let routes_chunk = Rc::new(RefCell::new(chunk_routes(routes, block.intersections)));
 
         // there is nothing to do if any of the intersection road has a vehicle.
-        if routes_chunk.borrow().iter().any(|r| r.stage == Stage::Crossing ||
-            (r.cross, r.itineraire) == block.lane && r.vehicles.len() == 0) 
-         {
+        if routes_chunk.borrow().iter().any(|r| (r.cross, r.itineraire) == block.lane && r.vehicles.len() == 0) {
+            continue;
+        }
+
+        if routes_chunk.borrow().iter().any(|r| r.stage == Stage::Crossing) {
+            for r in routes_chunk.borrow_mut().iter_mut() {
+                if (r.cross, r.itineraire) == block.lane && r.stage != Stage::Crossing {
+                    r.other_route_crossed = true;
+                    break;
+                }
+            }
             continue;
         }
 

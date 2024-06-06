@@ -16,6 +16,7 @@ pub struct Route {
     pub waiting_since: Option<Instant>,
     pub is_vehicle_in_intersection: bool,
     detected_collisons: bool,
+    pub other_route_crossed: bool,
 }
 
 impl Route {
@@ -34,7 +35,8 @@ impl Route {
             stop_point,
             is_vehicle_in_intersection: false,
             waiting_since: None,
-            detected_collisons: false
+            detected_collisons: false,
+            other_route_crossed: false
         }
     }
 
@@ -119,6 +121,7 @@ impl Route {
 
         if self.stage == Stage::Crossing && self.vehicles.len() != 0 {
             self.detected_collisons = false;
+            self.other_route_crossed = false;
             // && cmp(self.stop_point, v.position) < 2.0 * self.settings.safety_distance)
             for vehicle in self.vehicles.iter_mut()
                 .filter(|v| v.stage == Stage::Crossing || 
@@ -130,7 +133,7 @@ impl Route {
             // Réduire la vitesse des véhicules qui sont à moins de safety_distance
             for vehicle in self.vehicles.iter_mut()
                 .filter(|v| v.stage == Stage::Crossing ||  cmp(self.stop_point, v.position) < self.settings.safety_distance) {
-                    if !self.detected_collisons {
+                    if !self.detected_collisons && self.other_route_crossed {
                         statistic.close_calls += 1;
                         self.detected_collisons = true;
                     }

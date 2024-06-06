@@ -99,6 +99,7 @@ pub fn main() {
             }
         }
 
+        // the smart road algorithm to avoid collisions
         smart_intersection(&mut lanes.borrow_mut());
 
         canvas.present();

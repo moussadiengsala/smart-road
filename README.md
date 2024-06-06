@@ -1,250 +1,256 @@
-# smart-road
+# Smart Road
+## Overview
 
-// lane.rs
- pub fn g(&self, lanes: Vec<Self>) {
-        let all_route: Vec<&Route> = lanes.iter()
-            .flat_map(|lane| lane.routes.iter())
-            .collect();
-        
-        for route in self.routes.iter() {
-            // route.can_cross(all_route.clone());
-        }
-    }
-
-    // pub fn closest_vehicle_distance(&self) -> Option<f64> {
-    //     self.vehicles
-    //         .iter()
-    //         .map(|vehicle| vehicle.distance_to(self.stop_point))
-    //         .min_by(|a, b| a.partial_cmp(b).unwrap())
-    // }
-
-    // pub fn stop_vehicules(&mut self) {
-    //     let stop_point = match self.cross {
-    //         Cross::First => self.settings.stop_point_first,
-    //         Cross::Second => self.settings.stop_point_second,
-    //         Cross::Third => self.settings.stop_point_third,
-    //         Cross::Fourth => self.settings.stop_point_fourth,
-    //     };
-
-    //     let mut vehicles = self.vehicles.iter_mut().collect::<Vec<&mut Vehicle>>();
-    //     for i in 0..vehicles.len() {
-    //         let can_move = if let Some(next_vehicle) = vehicles.iter().nth((i as i32 - 1) as usize)
-    //         {
-    //             vehicles[i].distance(next_vehicle) > self.settings.safety_distance
-    //         } else {
-    //             true
-    //         };
-
-    //         if (vehicles[i].position == stop_point && self.stage == Stage::Waiting) || !can_move {
-    //             vehicles[i].is_stopped = true;
-    //         }
-
-    //         if self.stage == Stage::Crossing && vehicles[i].is_stopped {
-    //             vehicles[i].is_stopped = false;
-    //         }
-    //     }
-    // }
+This project simulates traffic control at a road intersection in a city. The primary objective is to manage the flow of vehicles through the intersection using traffic lights and ensure that traffic congestion is minimized while avoiding collisions.
 
 
+## Explaination
+you'll find this followings files
 
-// routes.rs
-
- pub fn can_cross(&mut self, routes: Vec<&Self>)  {
-
-    }
-
-// lib.rs
-
-
-
-// fn extract_routes_mut(lanes: &mut Vec<Lane>) -> Vec<&mut Route> {
-//     lanes.iter_mut()
-//         .flat_map(|lane| lane.routes.iter_mut())
-//         .collect()
-// }
-
-
-// fn chunk_routes<'a>(
-//     routes: Vec<&'a mut Route>,
-//     block: usize,
-// ) -> Vec<&'a mut Route> {
-//     let mut chunks = Vec::new();
-
-//     for route in routes {
-//         for block_def in BLOCKS[block].iter() {
-//             if block_def == &(route.cross, route.itineraire) {
-//                 chunks.push(&mut *route);
-//                 break;
-//             }
-//         }
-//     }
-    
-//     chunks
-// }
-
-
-// pub fn get_blocks(lanes: &mut Vec<Lane>) {
-//     let routes: Vec<&mut Route> = extract_routes_mut(lanes);
-//     let routes_chunk: Vec<&mut Route> = chunk_routes(routes, 1);
-
-//     if routes_chunk.iter().any(|r| r.stage == Stage::Crossing) {
-//         return;
-//     }
-
-//     let min_distance_route = routes_chunk.iter()
-//         .min_by_key(|&route| route.distance_to_stop_point())
-//         .unwrap();
-
-//     // Adjust velocity based on the found route
-//     for i in 0..routes_chunk.len() {
-//         let route = &mut routes_chunk[i].clone();
-//         if route.cross == min_distance_route.cross {
-//             route.adjust_velocity_vehicle_in_route(Vilosity::Fast);
-//             route.stage = Stage::Crossing;
-//         } else {
-//             route.adjust_velocity_vehicle_in_route(Vilosity::Slow);
-//         }
-//     }
-// }
-
-
-//     // for route in routes_chunk.iter_mut() {
-//     //     if (route.clone().cross, route.clone().itineraire) == (a(&routes_chunk).cross, a(&routes_chunk).itineraire) {
-//     //         route.adjust_velocity_vehicle_in_route(Vilosity::Fast);
-//     //     } else {
-//     //         route.adjust_velocity_vehicle_in_route(Vilosity::Slow);
-//     //     }
-//     // }
-
-
-// for b in routes_chunk {
-//     println!("{:?} {:?}", b.cross, b.itineraire);
-// }
-
-// for block in chunk_routes(all_routes_slice, 1).iter() {
-//     // the block that has the min distance returned by the fynction distance_to_stop_point
-//     // should use adjust_velocity_vehicle_in_route with vilosity_type = Vilosity::Fast the other Vilosity::Slow
-
-// }
-// pub fn update_traffic_lights(lanes: &mut [Lane]) {
-//     // Check if any lane is currently in the Crossing stage
-//     if lanes.iter().any(|lane| lane.stage == Stage::Crossing) {
-//         return;
-//     }
-
-//     let mut next_cross_lane = None;
-//     let mut min_distance = f64::MAX;
-//     let mut max_vehicle_count = 0;
-
-//     for lane in lanes.iter_mut() {
-//         let waiting_vehicles: Vec<&Vehicle> = lane
-//             .vehicles
-//             .iter()
-//             .filter(|v| v.stage == Stage::Waiting)
-//             .collect();
-
-//         if !waiting_vehicles.is_empty() {
-//             if let Some(distance) = lane.closest_vehicle_distance() {
-//                 let vehicle_count = waiting_vehicles.len();
-
-//                 if distance < min_distance || (distance == min_distance && vehicle_count > max_vehicle_count) {
-//                     min_distance = distance;
-//                     max_vehicle_count = vehicle_count;
-//                     next_cross_lane = Some(lane);
-//                 }
-//             }
-//         }
-//     }
-
-//     if let Some(lane) = next_cross_lane {
-//         lane.stage = Stage::Crossing;
-//     }
-// }
-
-
-// main.rs
-
-use std::cell::RefCell;
-
-use sdl2::image::{self, InitFlag, LoadTexture};
-use smart_road::*;
+### main file
+```rust
+// some impportation here ...
 
 pub fn main() {
-    let settings = Rc::new(Settings::new(1000, 1000, 30, 1, 60.0));
+   // this is settings of the game I stroe diffrent dimensions like the canvas width ... and keys coordonates and more ...
+   let settings = Rc::new(Settings::new(1000, 1000, 30, 1, 100.0));
+   // tracking here diffrentes statistics of a vehicles so that to display it at the end ...
+   let mut statistic: Statistics = Statistics::new();
 
-    let sdl_context = sdl2::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
-    // Initialize SDL2_image
-    let _image_context = image::init(InitFlag::PNG | InitFlag::JPG).unwrap();
+    // sdl2 settings here ...
 
-    let window = video_subsystem
-        .window("smart road", settings.width as u32, settings.height as u32)
-        .position_centered()
-        .build()
-        .unwrap();
-    
-    let mut canvas = window.into_canvas().build().unwrap();
-
-    
-    // Load an image as a texture
-    // let texture_creator = canvas.texture_creator();
-    // let texture = texture_creator
-    //     .load_texture("./unnamed.png")
-    //     .unwrap();
-
-
-    // canvas.clear();
+    // go see lane file for more infomation ...
+    /*know each lane has 6 routes:
+      * 3 for vehicles that go out of the canvas.
+      * 3 for vehicles that come in of the canvas: but for this lane three there 3 routes:
+         - one route Left: the vehicles that come into this route should turn at their left at some point.
+         - one route Straight: the vehicles that come into this route should never turn.
+         - one route Right: the vehicles that come into this route should turn at their right at some point.
+    */
     let lanes: Rc<RefCell<Vec<Lane>>> = Rc::new(RefCell::new(vec![
-        Lane::new(Cross::First, settings.clone()),
-        Lane::new(Cross::Second, settings.clone()),
-        Lane::new(Cross::Third, settings.clone()),
-        Lane::new(Cross::Fourth, settings.clone()),
+        Lane::new(Cross::First, settings.clone()), // represent the (North) lane
+        Lane::new(Cross::Second, settings.clone()), // represent the (West) lane
+        Lane::new(Cross::Third, settings.clone()), // represent the (East) lane
+        Lane::new(Cross::Fourth, settings.clone()), // represent the (South) lane
     ]));
-    
-    canvas.present();
-    let mut event_pump = sdl_context.event_pump().unwrap();
-    let mut i = 0;
+
+    let mut event_pump: sdl2::EventPump = sdl_context.event_pump().unwrap();
     'running: loop {
-        i = (i + 1) % 255;
-        canvas.set_draw_color(Color::RGB(55, 64, 5));
-        canvas.clear();
-        for event in event_pump.poll_iter() {
-            match event {
-                Event::Quit { .. }
-                | Event::KeyDown {
-                    keycode: Some(Keycode::Escape),
-                    ..
-                } => break 'running,
-                _ => {
-                    handle_keyboard_event(&event,&mut lanes.borrow_mut(), settings.clone());
-                }
-            }
-        }
-
-        canvas.clear();
-        // The rest of the game loop goes here...
-
-        // load the image
-        // canvas.copy(&texture, None, None).unwrap();
-
-        // map
+        // listening the event keyboard here ... 
+        // drawing the map here ...
         draw_map(&mut canvas, settings.clone());
 
+        // updates here diffrentes lanes ...
         {
             let mut lanes_borrowed = lanes.borrow_mut();
             for lane in lanes_borrowed.iter_mut() {
-                lane.update(&mut canvas);
+                lane.update(&mut canvas, &a, &mut statistic);
             }
         }
 
-        {
-            let lanes_borrowed = lanes.borrow();
-            for lane in lanes_borrowed.iter() {
-                lane.g(lanes_borrowed.clone());
-            }
-        }
+        // the smart road algorithm to avoid collisions
+        smart_intersection(&mut lanes.borrow_mut());
 
-        canvas.present();
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+        // ...
+   }
+
+   // dispply the statistics at the end ...
+   statistic.display_statistics_window(&mut event_pump);
+}
+
+```
+
+### lib file 
+this is where reside the function to listen the keyboard and the smart road algorithm
+
+```ruat
+// some importations ...
+// pub enum Direction with values Up, Down, Left, Right, None 
+// pub enum Itineraire with values Left, Right, Straight cause for a lane these is only those 3 possiblities.
+// pub enum Vilosity Reduce, Slow, Medium, Fast my diffrentes types of velosities in the game.
+
+// this listen the keyboard user
+pub fn handle_keyboard_event(event: &Event, lanes: &mut Vec<Lane>, settings: Rc<Settings>) {
+    let mut binding = Lane::new(Cross::First, settings);
+    let (lane, route) = match event {
+
+        // if key Up choose the lane at 3 position meaning the (South) lane.
+        Event::KeyDown {
+            keycode: Some(Keycode::Up),
+            ..
+        } => (lanes.iter_mut().nth(3).unwrap(), Direction::Up),
+        // ...
+        // choose one randomly if key is (R)
+    };
+
+    // after chosing a lane you chose route Left or route Straight or route right.
+    if route != Direction::None {
+        let mut rng = rand::thread_rng();
+        match rng.gen_range(0, 3) {
+            0 => lane.routes.iter_mut().nth(0).unwrap().add_vehicle(route),
+            // ...
+        }
     }
 }
+
+// the smart road road algorithm
+pub fn smart_intersection(lanes: &mut Vec<Lane>) {
+    // ...
+}
+```
+
+### map file
+nothing to say here it's just for drawing the map game.
+
+### settings file 
+this is like I say in the main the game settings let me give litte more infomations about it.
+
+```rust 
+   // some importations ...
+
+   struct Statistics {
+      max_vehicles_passed // the totale vehicle
+      max_velocities // max velosity of a vehicle during his travels
+      min_velocities // min velosity of a vehicle during his travels
+      time_to_pass // the travels time of a vehicle
+      max_velocity // the max of max_velocities
+      min_velocity // the min of min_velocities
+      max_time_to_pass // the max of time_to_pass
+      min_time_to_pass // the min of time_to_pass
+      close_calls // everytime a collision is avoid this is incremented
+   }
+
+   // some methods of Statistics here
+
+   struct Settings {
+      width // canvas width
+      height // canvas height
+      vehicle // vehicle size
+      safety_distance // safety distance
+      vertical_key_points // all key point in axis x
+      horizontal_key_points // all key point in axis y
+
+      // ...
+   }
+   // some methods of Statistics here
+
+   // this function load the diffrentes texture in assets and return a vec of them.
+   // the struct vehicle has field name texture of type usize represent the position of a texture in the vec return by this function.
+   pub fn cars_texture<'a>(texture_creator: &'a TextureCreator<WindowContext>) -> Vec<Texture<'a>> {
+      // ...
+
+      let texture_names = vec!["BlackOut.png", "WhiteStrip.png", "BlueStrip.png", "GreenStrip.png", "RedStrip.png", "PinkStrip.png"];
+      let mut cars_textures = Vec::new();
+      // ..
+      cars_textures
+   }
+
+   // this is a part of the smart road algorithm
+   pub struct BLOCK<'a> {
+      lane // a given route
+      intersections // all route that could be in intersection with lane.
+   }
+
+   // go on lib file to the smart road algorithm to see his use case
+   /*
+      this variable is the key of the smart road algorithm let me break it down to make sure you know what i mean here.
+
+      evertime I iterate over field intersections slice in BLOCK I look these:
+      - among the routes in intersections who has the most vehicle in the 'smart road intersections' or
+      - among the routes in intersections who has the closest vehicle to the 'stop point (the stop point is the point before the "smart road intersections")' 
+
+      if the resulted route of thes two is the same as lane field in BLOCK I let his vehicle cross otherwise I reduce the vilosity of his vehicles. 
+   */
+   pub(crate) const BLOCKS: &[&BLOCK] = &[
+      // example: (North)
+      &BLOCK{
+         lane: (Cross::First, Itineraire::Left), // North-Left route
+         // the North-Left route is in intersection with these followings routes.
+         intersections: &[
+               (Cross::First, Itineraire::Left), // North-Left itself
+               (Cross::Fourth, Itineraire::Straight), // South-Straight
+               (Cross::Fourth, Itineraire::Left), // South-Left
+               (Cross::Third, Itineraire::Left), // East-Left
+               (Cross::Third, Itineraire::Straight), // East-Straight
+               (Cross::Second, Itineraire::Left), // West-Left
+         ],
+      },
+      // ...
+  
+   ];
+
+```
+
+### lane file
+```rust
+
+   // ...
+
+   struct Lane {
+      routes // his diffrentes routes (Left, Straight, Right)
+      cross // values First(North), Second(West), Three(East), Fourth(South)
+      stage // values Waiting(his vehicles should reduce velosity), Crosing(...)
+      stop_point // point before enter the intersection
+      settings // the game settings
+   }
+
+   // some method of Lane
+```
+
+### route file
+```rust 
+   // ...
+   struct Route {
+      vehicles // vehicle in the route
+      itineraire // which route this is Left, Straight or Right.
+      // ...
+   }
+   // some method of Route
+```
+### cars file
+
+## Notions
+
+   - Documentation for SDL2.
+
+## Getting Started
+### Prerequisites
+
+   - Rust programming language installed
+   - SDL2 library
+
+### Installation
+
+    1. Clone the repository:
+   ```sh
+   git clone https://github.com/moussadiengsala/road_intersection.git
+   cd road_intersection
+   ```
+
+    2. Install dependencies:
+
+   ```sh
+    cargo build
+   ```
+
+    3. Usage
+   ```sh
+    cargo run
+   ```
+
+   Use the keyboard controls to spawn vehicles and observe the traffic flow.
+
+
+## Demo
+
+[video demo](media/demo.mp4)
+
+## Contributing
+Contributions are welcome! Please open an issue or submit a pull request.
+
+## License
+This project is licensed under the MIT License.
+
+## Authors
+
+- [@Moussa Dieng](https://www.moussa-dieng.dev)

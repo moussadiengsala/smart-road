@@ -75,6 +75,7 @@ impl Statistics {
             format!("Min velocity : {:.2} m/s", self.min_velocity),
             format!("Max time to pass : {:.2} s",self.max_time_to_pass),
             format!("Min time to pass : {:.2} s",self.min_time_to_pass),
+            format!("Collisions : {}", 0),
             format!("Close calls : {}",self.close_calls)
         ];
 
