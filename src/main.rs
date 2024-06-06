@@ -46,19 +46,31 @@ pub fn main() {
     ]));
 
     let texture_creator = canvas.texture_creator();
-    let texture = texture_creator.load_texture("assets/marche.png").unwrap();
+    let texture = texture_creator.load_texture("assets/1.png").unwrap();
     let (width, height, half_width, half_height) = (
         settings.vertical_key_points[2],
         settings.horizontal_key_points[2],
         settings.width / 2,
         settings.height / 2,
     );
-  
+
     let positions_and_sprite = vec![
-        (Point::new(-half_width + width / 2, -half_height + height / 2) , Rect::new(0, height, width as u32, height as u32)),
-        (Point::new(half_width - width / 2, -half_height + height / 2) , Rect::new(100, height - 100, width as u32, height as u32)),
-        (Point::new(-half_width + width / 2, half_height - height / 2) , Rect::new(width, 100, width as u32, height as u32)),
-        (Point::new(half_width - width / 2, half_height - height / 2) , Rect::new(width, height, width as u32, height as u32)),
+        (
+            Point::new(-half_width + width / 2, -half_height + height / 2),
+            Rect::new(width -100, height, width as u32, height as u32),
+        ),
+        (
+            Point::new(half_width - width / 2, -half_height + height / 2),
+            Rect::new(100, height - 100, width as u32, height as u32),
+        ),
+        (
+            Point::new(-half_width + width / 2, half_height - height / 2),
+            Rect::new(width, 100, width as u32, height as u32),
+        ),
+        (
+            Point::new(half_width - width / 2, half_height - height / 2),
+            Rect::new(width, height-300, width as u32, height as u32),
+        ),
     ];
 
     let a: Vec<Texture> = cars_texture(&texture_creator);
@@ -67,7 +79,7 @@ pub fn main() {
     let mut i = 0;
     'running: loop {
         i = (i + 1) % 255;
-        canvas.set_draw_color(Color::RGB(128, 128, 128));
+        canvas.set_draw_color(Color::RGB(50, 50, 50));
         canvas.clear();
         for event in event_pump.poll_iter() {
             match event {
