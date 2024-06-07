@@ -46,7 +46,7 @@ pub fn main() {
     ]));
 
     let texture_creator = canvas.texture_creator();
-    let texture = texture_creator.load_texture("assets/marche.png").unwrap();
+    let texture = texture_creator.load_texture("assets/1.jpg").unwrap();
     let (width, height, half_width, half_height) = (
         settings.vertical_key_points[2],
         settings.horizontal_key_points[2],
@@ -67,7 +67,7 @@ pub fn main() {
     let mut i = 0;
     'running: loop {
         i = (i + 1) % 255;
-        canvas.set_draw_color(Color::RGB(128, 128, 128));
+        canvas.set_draw_color(Color::RGB(80, 80, 80));
         canvas.clear();
         for event in event_pump.poll_iter() {
             match event {

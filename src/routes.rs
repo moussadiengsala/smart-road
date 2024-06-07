@@ -1,4 +1,4 @@
-use std::{rc::Rc, time::Instant};
+use std::{rc::Rc, time::{Duration, Instant}};
 
 use rand::Rng;
 use sdl2::{rect::Point, render::{Canvas, Texture}, video::Window};
@@ -17,6 +17,7 @@ pub struct Route {
     pub is_vehicle_in_intersection: bool,
     detected_collisons: bool,
     pub other_route_crossed: bool,
+    pub time: Instant,
 }
 
 impl Route {
@@ -36,7 +37,8 @@ impl Route {
             is_vehicle_in_intersection: false,
             waiting_since: None,
             detected_collisons: false,
-            other_route_crossed: false
+            other_route_crossed: false,
+            time: Instant::now(),
         }
     }
 
@@ -49,6 +51,10 @@ impl Route {
             self.stage = Stage::Waiting;
             self.waiting_since = None;
             return;
+        }
+
+        if self.stage == Stage::Crossing && Instant::now().duration_since(self.time) > Duration::from_secs(1500) {
+            self.stage = Stage::Waiting;
         }
         
         let vehicle_in_intersection = self
@@ -167,7 +173,7 @@ impl Route {
         vehicle.spawn(route);
 
         if let Some(last) = self.vehicles.clone().last() {
-            if self.settings.safety_distance < vehicle.distance(last) {
+            if self.settings.safety_distance < vehicle.distance(last) && self.vehicles.len() < 5 {
                 self.vehicles.push(vehicle);
             }
         } else {

@@ -5,7 +5,7 @@ pub use sdl2::event::Event;
 pub use sdl2::keyboard::Keycode;
 pub use sdl2::pixels::Color;
 use settings::BLOCKS;
-use std::cell::RefCell;
+use std::{cell::RefCell, time::Instant};
 pub use std::{rc::Rc, time::Duration};
 
 mod settings;
@@ -140,6 +140,7 @@ pub fn smart_intersection(lanes: &mut Vec<Lane>) {
                 .collect::<Vec<&Vehicle>>().len()
         ) {
             if (c.cross, c.itineraire) == block.lane {
+                c.time = Instant::now();
                 c.stage = Stage::Crossing;
                 continue;
             }
@@ -152,12 +153,14 @@ pub fn smart_intersection(lanes: &mut Vec<Lane>) {
                 route.distance_to_stop_point()
             }) {
                 if (c.cross, c.itineraire) == block.lane {
+                    c.time = Instant::now();
                     c.stage = Stage::Crossing;
                     continue;
                 }
         } else if let Some(c) = b.iter_mut()
             .max_by_key(|r| r.vehicles.len()) {
             if (c.cross, c.itineraire) == block.lane {
+                c.time = Instant::now();
                 c.stage = Stage::Crossing;
                 continue;
             }
