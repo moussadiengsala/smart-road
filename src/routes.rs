@@ -53,7 +53,7 @@ impl Route {
             return;
         }
 
-        if self.stage == Stage::Crossing && Instant::now().duration_since(self.time) > Duration::from_secs(1500) {
+        if self.stage == Stage::Crossing && Instant::now().duration_since(self.time) > Duration::from_secs(800) {
             self.stage = Stage::Waiting;
         }
         
@@ -71,7 +71,7 @@ impl Route {
         if !vehicle_in_intersection.is_empty() {
             self.is_vehicle_in_intersection = true;
         }
- 
+
     }
 
     pub fn distance_to_stop_point(&self) -> usize {

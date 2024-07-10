@@ -46,7 +46,7 @@ pub fn main() {
     ]));
 
     let texture_creator = canvas.texture_creator();
-    let texture = texture_creator.load_texture("assets/1.jpg").unwrap();
+    let texture = texture_creator.load_texture("assets/marche.png").unwrap();
     let (width, height, half_width, half_height) = (
         settings.vertical_key_points[2],
         settings.horizontal_key_points[2],

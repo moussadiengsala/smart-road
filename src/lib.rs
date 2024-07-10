@@ -50,23 +50,23 @@ pub enum Vilosity {
 pub fn handle_keyboard_event(event: &Event, lanes: &mut Vec<Lane>, settings: Rc<Settings>) {
     let mut binding = Lane::new(Cross::First, settings);
     let (lane, route) = match event {
-        Event::KeyDown {
+        Event::KeyUp {
             keycode: Some(Keycode::Up),
             ..
         } => (lanes.iter_mut().nth(3).unwrap(), Direction::Up),
-        Event::KeyDown {
+        Event::KeyUp {
             keycode: Some(Keycode::Down),
             ..
         } => (lanes.iter_mut().nth(0).unwrap(), Direction::Down),
-        Event::KeyDown {
+        Event::KeyUp {
             keycode: Some(Keycode::Left),
             ..
         } => (lanes.iter_mut().nth(2).unwrap(), Direction::Left),
-        Event::KeyDown {
+        Event::KeyUp {
             keycode: Some(Keycode::Right),
             ..
         } => (lanes.iter_mut().nth(1).unwrap(), Direction::Right),
-        Event::KeyDown {
+        Event::KeyUp {
             keycode: Some(Keycode::R),
             ..
         } => {
